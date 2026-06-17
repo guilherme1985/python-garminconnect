@@ -7,7 +7,6 @@ or: pip install garminconnect[workout]
 
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -15,14 +14,11 @@ if TYPE_CHECKING:
 else:
     try:
         from pydantic import BaseModel, ConfigDict, Field
-    except ImportError:
-        # Fallback if pydantic is not installed
-        BaseModel = object  # type: ignore[assignment,misc]
-        ConfigDict = dict  # type: ignore[assignment,misc]
-
-        def Field(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[misc]
-            """Placeholder Field function when pydantic is not installed."""
-            return None
+    except ImportError as _exc:
+        raise ImportError(
+            "O módulo workout requer pydantic. Instale com:\n"
+            "    pip install 'garminconnect[workout]'"
+        ) from _exc
 
 
 # Sport Type IDs — from /workout-service/workout/types

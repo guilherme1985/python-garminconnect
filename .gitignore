@@ -4,6 +4,7 @@ pdm.lock
 .claude/
 bug.txt
 roadmap.txt
+nova_arquitetura.txt
 
 # Virtual environments
 .venv/

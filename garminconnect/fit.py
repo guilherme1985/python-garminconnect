@@ -1,4 +1,3 @@
-# type: ignore  # Complex binary data handling - mypy errors expected
 import time
 from datetime import datetime
 from io import BytesIO
