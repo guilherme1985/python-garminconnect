@@ -4,302 +4,260 @@
 ![Project Maintenance][maintenance-shield]
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
-[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
+[![Sponsor no GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
 
 # Python: Garmin Connect
 
-The Garmin Connect API library comes with two examples:
+Biblioteca Python 3 para acesso à API do Garmin Connect, com dois exemplos prontos para uso:
 
-- **`example.py`** - Simple getting-started example showing authentication, token storage, and basic API calls
-- **`demo.py`** - Comprehensive demo providing access to **130+ API methods** organized into **13 categories** for easy navigation
+- **`example.py`** — Exemplo básico de autenticação, armazenamento de tokens e chamadas à API
+- **`demo.py`** — Demo completo com acesso a **130+ métodos da API** organizados em **13 categorias**
 
 ```bash
 $ ./demo.py
 🏃‍♂️ Full-blown Garmin Connect API Demo - Main Menu
 ==================================================
-Select a category:
+Selecione uma categoria:
 
-  [1] 👤 User & Profile
-  [2] 📊 Daily Health & Activity
-  [3] 🔬 Advanced Health Metrics
-  [4] 📈 Historical Data & Trends
-  [5] 🏃 Activities & Workouts
-  [6] ⚖️ Body Composition & Weight
-  [7] 🏆 Goals & Achievements
-  [8] ⌚ Device & Technical
-  [9] 🎽 Gear & Equipment
-  [0] 💧 Hydration & Wellness
-  [a] 🔧 System & Export
-  [b] 📅 Training plans
-  [c] ⛳ Golf
+  [1] 👤 Usuário & Perfil
+  [2] 📊 Saúde & Atividade Diária
+  [3] 🔬 Métricas Avançadas de Saúde
+  [4] 📈 Histórico & Tendências
+  [5] 🏃 Atividades & Treinos
+  [6] ⚖️ Composição Corporal & Peso
+  [7] 🏆 Metas & Conquistas
+  [8] ⌚ Dispositivo & Técnico
+  [9] 🎽 Equipamentos
+  [0] 💧 Hidratação & Bem-Estar
+  [a] 🔧 Sistema & Exportação
+  [b] 📅 Planos de Treino
+  [c] ⛳ Golfe
 
-  [q] Exit program
+  [q] Sair
 
-Make your selection:
+Faça sua seleção:
 ```
 
-## API Coverage Statistics
+## Cobertura da API
 
-- **Total API Methods**: 134+ unique endpoints (snapshot)
-- **Categories**: 13 organized sections
-- **User & Profile**: 4 methods (basic user info, settings)
-- **Daily Health & Activity**: 9 methods (today's health data)
-- **Advanced Health Metrics**: 12 methods (fitness metrics, HRV, VO2, training readiness, running tolerance)
-- **Historical Data & Trends**: 9 methods (date range queries, weekly aggregates)
-- **Activities & Workouts**: 38 methods (comprehensive activity, workout management, typed workout uploads, scheduling, import, edit description / exercise sets)
-- **Body Composition & Weight**: 8 methods (weight tracking, body composition)
-- **Goals & Achievements**: 15 methods (challenges, badges, goals)
-- **Device & Technical**: 7 methods (device info, settings)
-- **Gear & Equipment**: 7 methods (gear management, tracking)
-- **Hydration & Wellness**: 12 methods (hydration, nutrition, blood pressure, menstrual)
-- **System & Export**: 4 methods (reporting, logout, GraphQL)
-- **Training Plans**: 3 methods (plans, plan by ID, adaptive plan by ID)
-- **Golf**: 3 methods (scorecard summary, scorecard detail, shot data)
+- **Total de métodos**: 134+ endpoints únicos
+- **Categorias**: 13 seções organizadas
+- **Usuário & Perfil**: 4 métodos (informações básicas do usuário, configurações)
+- **Saúde & Atividade Diária**: 9 métodos (dados de saúde do dia)
+- **Métricas Avançadas**: 12 métodos (aptidão física, HRV, VO2, prontidão para treino, tolerância ao esforço)
+- **Histórico & Tendências**: 9 métodos (consultas por período, agregados semanais)
+- **Atividades & Treinos**: 38 métodos (gerenciamento completo de atividades, upload tipado, agendamento, importação, edição)
+- **Composição Corporal & Peso**: 8 métodos (rastreamento de peso e composição)
+- **Metas & Conquistas**: 15 métodos (desafios, badges, metas)
+- **Dispositivo & Técnico**: 7 métodos (informações e configurações do dispositivo)
+- **Equipamentos**: 7 métodos (gerenciamento de equipamentos)
+- **Hidratação & Bem-Estar**: 12 métodos (hidratação, nutrição, pressão arterial, ciclo menstrual)
+- **Sistema & Exportação**: 4 métodos (relatórios, logout, GraphQL)
+- **Planos de Treino**: 3 métodos (planos, plano por ID, plano adaptativo por ID)
+- **Golfe**: 3 métodos (resumo do placar, detalhe do placar, dados de cada tacada)
 
-### Interactive Features
+## 📖 Sobre
 
-- **Enhanced User Experience**: Categorized navigation with emoji indicators
-- **Smart Data Management**: Interactive weigh-in deletion with search capabilities
-- **Comprehensive Coverage**: All major Garmin Connect features are accessible
-- **Error Handling**: Robust error handling with user-friendly prompts
-- **Data Export**: JSON export functionality for all data types
+Esta biblioteca permite que desenvolvedores acessem programaticamente dados do Garmin Connect, incluindo:
 
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
-[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
+- **Métricas de Saúde**: Frequência cardíaca, sono, estresse, composição corporal, SpO2, HRV
+- **Dados de Atividade**: Treinos, upload tipado de treinos (corrida, ciclismo, natação, caminhada, trilha), agendamento, exercícios, status de treino, métricas de desempenho, importação direta (sem re-exportação do Strava)
+- **Nutrição**: Diários alimentares diários, refeições e configurações nutricionais
+- **Golfe**: Resumos de placares, detalhes, dados tacada a tacada
+- **Informações de Dispositivo**: Dispositivos conectados, configurações, alarmes, dados solares
+- **Metas & Conquistas**: Recordes pessoais, badges, desafios, previsões de corrida
+- **Dados Históricos**: Tendências, acompanhamento de progresso, consultas por período
 
-A comprehensive Python3 API wrapper for Garmin Connect, providing access to health, fitness, and device data.
+Compatível com todas as contas do Garmin Connect. Veja <https://connect.garmin.com/>
 
-## 📖 About
+## 📦 Instalação
 
-This library enables developers to programmatically access Garmin Connect data including:
-
-- **Health Metrics**: Heart rate, sleep, stress, body composition, SpO2, HRV
-- **Activity Data**: Workouts, typed workout uploads (running, cycling, swimming, walking, hiking), workout scheduling, exercises, training status, performance metrics, import-style uploads (no Strava re-export)
-- **Nutrition**: Daily food logs, meals, and nutrition settings
-- **Golf**: Scorecard summaries, scorecard details, shot-by-shot data
-- **Device Information**: Connected devices, settings, alarms, solar data
-- **Goals & Achievements**: Personal records, badges, challenges, race predictions
-- **Historical Data**: Trends, progress tracking, date range queries
-
-Compatible with all Garmin Connect accounts. See <https://connect.garmin.com/>
-
-## 📦 Installation
-
-Install from PyPI:
+Instale via PyPI:
 
 ```bash
 pip install --upgrade garminconnect curl_cffi
 ```
 
-## Run demo software (recommended)
+## Executar o demo (recomendado)
 
-Clone the repo, then:
+Clone o repositório e execute:
 
 ```bash
 python3 -m venv .venv --copies
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # No Windows: .venv\Scripts\activate
 pip install -e ".[example]"
 
-python3 ./example.py   # simple getting-started example
-python3 ./demo.py      # comprehensive demo (130+ API methods)
+python3 ./example.py   # exemplo básico de introdução
+python3 ./demo.py      # demo completo (130+ métodos da API)
 ```
 
-## 🛠️ Development
+## 🛠️ Desenvolvimento
 
-This project uses [PDM](https://pdm.fming.dev/) for dependency management and task automation.
+Este projeto usa [PDM](https://pdm.fming.dev/) para gerenciamento de dependências e automação de tarefas.
 
-> **⚠️ Important**: Create a virtual environment first on externally-managed Python installs (Debian/Ubuntu) to avoid system package conflicts.
+> **⚠️ Importante**: Crie um ambiente virtual antes em instalações Python gerenciadas externamente (Debian/Ubuntu) para evitar conflitos com pacotes do sistema.
 
 ```bash
 python3 -m venv .venv --copies
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # No Windows: .venv\Scripts\activate
 pip install pdm
 python -m pdm install --group :all
-pre-commit install --install-hooks  # optional but recommended
+pre-commit install --install-hooks  # opcional, mas recomendado
 ```
 
-> **Note**: Using `python -m pdm` instead of `pdm` avoids PATH issues on some
-> Windows setups where `pip install pdm` places the `pdm` executable outside
-> the directories on `PATH`. Once `pdm install` has run, subsequent `pdm run ...`
-> commands work normally because the venv's `Scripts/` directory is on `PATH`
-> while the venv is active.
+> **Nota**: Usar `python -m pdm` em vez de `pdm` evita problemas de PATH em algumas configurações Windows onde `pip install pdm` instala o executável fora dos diretórios do PATH. Após `pdm install`, os comandos `pdm run ...` funcionam normalmente com o venv ativo.
 
-**Development commands:**
+**Comandos de desenvolvimento:**
 
 ```bash
-pdm run format      # Auto-format code (isort, black, ruff --fix)
-pdm run lint        # Check code quality (isort, ruff, black, mypy)
-pdm run codespell   # Check spelling
-pdm run test        # Run test suite
-pdm run testcov     # Run tests with coverage report
-pdm run all         # Run all checks (lint + codespell + pre-commit + test)
-pdm run clean       # Clean build artifacts and cache files
-pdm run build       # Build package for distribution
-pdm run publish     # Build and publish to PyPI
-pdm run --list      # Show all available commands
+pdm run format      # Formata o código automaticamente (isort, black, ruff --fix)
+pdm run lint        # Verifica qualidade do código (isort, ruff, black, mypy)
+pdm run codespell   # Verifica ortografia
+pdm run test        # Executa a suíte de testes
+pdm run testcov     # Executa os testes com relatório de cobertura
+pdm run all         # Executa todas as verificações (lint + codespell + pre-commit + test)
+pdm run clean       # Limpa artefatos de build e cache
+pdm run build       # Empacota para distribuição
+pdm run publish     # Empacota e publica no PyPI
+pdm run --list      # Lista todos os comandos disponíveis
 ```
 
-Run `pdm run format && pdm run lint && pdm run test` before submitting PRs.
+Execute `pdm run format && pdm run lint && pdm run test` antes de enviar PRs.
 
-## 🔐 Authentication
+## 🔐 Autenticação
 
-Authentication uses the same mobile SSO flow as the official Garmin Connect Android app.
-No browser is needed.
+A autenticação usa o mesmo fluxo SSO móvel do aplicativo oficial Garmin Connect para Android.
+Nenhum navegador é necessário.
 
-**How it works:**
+**Como funciona:**
 
-1. **First login**: Authenticates via `sso.garmin.com/mobile/api/login` using the Android
-   app's client ID. If MFA is required, a callback (`prompt_mfa`) prompts for the one-time code.
-2. **Token exchange**: The service ticket is exchanged for DI OAuth Bearer tokens
-   (`access_token` + `refresh_token`) via `diauth.garmin.com`. Tokens are stored at
-   `~/.garminconnect/garmin_tokens.json`.
-3. **Auto-refresh**: Before each API request the library checks whether the DI token is about
-   to expire and refreshes it automatically — no user interaction required.
+1. **Primeiro login**: Autentica via `sso.garmin.com/mobile/api/login` usando o client ID do app Android. Se MFA for necessário, um callback (`prompt_mfa`) solicita o código de uso único.
+2. **Troca de token**: O ticket de serviço é trocado por tokens DI OAuth Bearer (`access_token` + `refresh_token`) via `diauth.garmin.com`. Os tokens são armazenados em `~/.garminconnect/garmin_tokens.json`.
+3. **Renovação automática**: Antes de cada requisição à API, a biblioteca verifica se o token DI está prestes a expirar e o renova automaticamente — sem interação do usuário.
 
-**Session lifetime:**
-- DI tokens auto-refresh indefinitely as long as the refresh token remains valid.
-- A full re-login with credentials (and possibly MFA) is only needed if the refresh token
-  itself expires or is revoked.
+**Tempo de vida da sessão:**
+- Os tokens DI se renovam indefinidamente enquanto o refresh token permanecer válido.
+- Um novo login completo com credenciais (e possivelmente MFA) só é necessário se o refresh token expirar ou for revogado.
 
-**Token storage:**
+**Armazenamento de tokens:**
 ```bash
-~/.garminconnect/garmin_tokens.json   # saved automatically, mode 0600
+~/.garminconnect/garmin_tokens.json   # salvo automaticamente, permissão 0600
 ```
 
-**Resilient login (multi-strategy + token validation):**
+**Login resiliente (multi-estratégia + validação de token):**
 
-`login()` tries several authentication strategies in order (mobile, SSO widget,
-web portal — each with and without TLS impersonation) and only declares success
-when the resulting token is actually accepted by the API. If a strategy obtains
-a token the API later rejects (a region/account-specific condition — see
-[#369](https://github.com/cyberjunky/python-garminconnect/issues/369)), the
-library transparently falls through to the next strategy. Set
-`Garmin(..., verify_login=False)` to restore the legacy "first token wins"
-behavior.
+O método `login()` tenta várias estratégias de autenticação em ordem (mobile, widget SSO, portal web — cada uma com e sem impressão digital TLS) e só declara sucesso quando o token resultante é efetivamente aceito pela API. Se uma estratégia obtiver um token que a API rejeitar posteriormente (condição específica de região/conta — veja [#369](https://github.com/cyberjunky/python-garminconnect/issues/369)), a biblioteca automaticamente tenta a próxima estratégia. Defina `Garmin(..., verify_login=False)` para restaurar o comportamento legado de "primeiro token vence".
 
-**Cached-token gotcha & self-healing:** when a `tokenstore` is supplied,
-`login()` loads those tokens *before* the strategy chain and short-circuits if
-they load — so stale/poisoned cached tokens used to fail every run. The library
-now detects this: if cached tokens are rejected by the API, it discards them and
-performs a fresh credential login automatically. To force a clean slate yourself
-(e.g. between a failed resume and a retry), call:
+**Token em cache inválido e auto-recuperação:** quando um `tokenstore` é fornecido, `login()` carrega esses tokens antes da cadeia de estratégias e encerra se eles carregarem — então tokens em cache inválidos costumavam falhar em toda execução. A biblioteca agora detecta isso: se tokens em cache forem rejeitados pela API, ela os descarta e realiza um login completo com credenciais automaticamente. Para forçar um estado limpo você mesmo (ex.: entre uma tentativa com falha e uma nova tentativa), chame:
 
 ```python
-g.logout()            # clears in-memory auth + cached tokens (uses GARMINTOKENS)
-g.logout(tokenstore)  # or pass an explicit path
+g.logout()            # limpa a autenticação em memória + tokens em cache (usa GARMINTOKENS)
+g.logout(tokenstore)  # ou passe um caminho explícito
 ```
 
-## 🧪 Testing
+## 🧪 Testes
 
-Run `example.py` once first to create saved tokens in `~/.garminconnect`, then:
+Execute `example.py` uma vez primeiro para criar os tokens salvos em `~/.garminconnect`, depois:
 
 ```bash
-pdm run test        # Run all tests
-pdm run testcov     # Run tests with coverage report
+pdm run test        # Executa todos os testes
+pdm run testcov     # Executa os testes com relatório de cobertura
 ```
 
-Optional: keep test tokens isolated
+Opcional: isolar os tokens de teste
 
 ```bash
 export GARMINTOKENS="$(mktemp -d)"
-python3 ./example.py   # create a fresh token file for tests
+python3 ./example.py   # cria um arquivo de token novo para os testes
 pdm run test
 ```
 
-**Note:** Tests use VCR cassettes to record/replay API responses. If tests fail with
-authentication errors, ensure valid tokens exist in `~/.garminconnect` (run
-`example.py` first).
+**Nota:** Os testes usam cassetes VCR para gravar/reproduzir respostas da API. Se os testes falharem com erros de autenticação, certifique-se de que tokens válidos existem em `~/.garminconnect` (execute `example.py` primeiro).
 
-## 📦 Publishing
+## 📦 Publicação
 
-For package maintainers:
+Para mantenedores do pacote:
 
-**Setup PyPI credentials:**
+**Configurar credenciais do PyPI:**
 
 ```bash
 pip install twine
-# Edit with your preferred editor, or create via here-doc:
-# cat > ~/.pypirc <<'EOF'
-# [pypi]
-# username = __token__
-# password = <PyPI_API_TOKEN>
-# EOF
 ```
 
 ```ini
 [pypi]
 username = __token__
-password = <PyPI_API_TOKEN>
+password = <TOKEN_API_PYPI>
 ```
 
-Recommended: use environment variables and restrict file perms
+Recomendado: use variáveis de ambiente e restrinja as permissões do arquivo
 
 ```bash
 chmod 600 ~/.pypirc
 export TWINE_USERNAME="__token__"
-export TWINE_PASSWORD="<PyPI_API_TOKEN>"
+export TWINE_PASSWORD="<TOKEN_API_PYPI>"
 ```
 
-**Publish new version:**
+**Publicar nova versão:**
 
 ```bash
-pdm run publish    # Build and publish to PyPI
+pdm run publish    # Empacota e publica no PyPI
 ```
 
-**Alternative publishing steps:**
+**Passos alternativos de publicação:**
 
 ```bash
-pdm run build      # Build package only
-pdm publish        # Publish pre-built package
+pdm run build      # Somente empacota
+pdm publish        # Publica pacote já compilado
 ```
 
-## 🤝 Contributing
+## 🤝 Contribuindo
 
-We welcome contributions! Here's how you can help:
+Contribuições são bem-vindas! Veja como você pode ajudar:
 
-- **Report Issues**: Bug reports and feature requests via GitHub issues
-- **Submit PRs**: Code improvements, new features, documentation updates
-- **Testing**: Help test new features and report compatibility issues
-- **Documentation**: Improve examples, add use cases, fix typos
+- **Reportar Problemas**: Bugs e solicitações de funcionalidades via issues no GitHub
+- **Enviar PRs**: Melhorias de código, novas funcionalidades, atualizações de documentação
+- **Testes**: Ajude a testar novas funcionalidades e reporte problemas de compatibilidade
+- **Documentação**: Melhore exemplos, adicione casos de uso, corrija erros
 
-**Before contributing:**
-1. Set up your dev environment (see [Development](#️-development) above)
-2. Format and lint: `pdm run format && pdm run lint`
-3. Run tests: `pdm run test`
-4. Follow existing code style and patterns
+**Antes de contribuir:**
+1. Configure seu ambiente de desenvolvimento (veja [Desenvolvimento](#️-desenvolvimento) acima)
+2. Formate e verifique: `pdm run format && pdm run lint`
+3. Execute os testes: `pdm run test`
+4. Siga o estilo e padrões de código existentes
 
 ### Jupyter Notebook
 
-Explore the API interactively with our [reference notebook](https://github.com/cyberjunky/python-garminconnect/blob/master/docs/reference.ipynb).
+Explore a API interativamente com o [notebook de referência](https://github.com/cyberjunky/python-garminconnect/blob/master/docs/reference.ipynb).
 
-### Python Code Examples
+### Exemplos de Código Python
 
 ```python
 import os
 from datetime import date
 from garminconnect import Garmin
 
-# First run: logs in and saves tokens to ~/.garminconnect
-# Subsequent runs: loads saved tokens and auto-refreshes
+# Primeira execução: faz login e salva tokens em ~/.garminconnect
+# Execuções seguintes: carrega tokens salvos e os renova automaticamente
 client = Garmin(
     os.getenv("EMAIL"),
     os.getenv("PASSWORD"),
-    prompt_mfa=lambda: input("MFA code: "),
+    prompt_mfa=lambda: input("Código MFA: "),
 )
 client.login("~/.garminconnect")
 
-# Get today's stats
-today = date.today().isoformat()
-stats = client.get_stats(today)
+# Obter estatísticas do dia
+hoje = date.today().isoformat()
+stats = client.get_stats(hoje)
 
-# Get heart rate data
-hr_data = client.get_heart_rates(today)
-print(f"Resting HR: {hr_data.get('restingHeartRate', 'n/a')}")
+# Obter dados de frequência cardíaca
+hr_data = client.get_heart_rates(hoje)
+print(f"FC em repouso: {hr_data.get('restingHeartRate', 'n/d')}")
 ```
 
-### Typed Workouts (Pydantic Models)
+### Treinos Tipados (Modelos Pydantic)
 
-The library includes optional typed workout models for creating type-safe workout definitions:
+A biblioteca inclui modelos de treino tipados opcionais para criar definições de treino com segurança de tipo:
 
 ```bash
 pip install garminconnect[workout]
@@ -312,9 +270,9 @@ from garminconnect.workout import (
     create_repeat_group,
 )
 
-# Create a structured running workout
+# Criar um treino de corrida estruturado
 workout = RunningWorkout(
-    workoutName="Easy Run",
+    workoutName="Corrida Leve",
     estimatedDurationInSecs=1800,
     workoutSegments=[
         WorkoutSegment(
@@ -325,59 +283,67 @@ workout = RunningWorkout(
     ]
 )
 
-# Upload and optionally schedule it
+# Fazer upload e, opcionalmente, agendar
 result = client.upload_running_workout(workout)
 client.schedule_workout(result["workoutId"], "2026-03-20")
 
-# Delete a workout or remove it from the calendar
+# Deletar um treino ou removê-lo do calendário
 client.delete_workout(workout_id)
 client.unschedule_workout(scheduled_workout_id)
 ```
 
-**Available workout classes:** `RunningWorkout`, `CyclingWorkout`, `SwimmingWorkout`, `WalkingWorkout`, `HikingWorkout`, `MultiSportWorkout`, `FitnessEquipmentWorkout`
+**Classes de treino disponíveis:** `RunningWorkout`, `CyclingWorkout`, `SwimmingWorkout`, `WalkingWorkout`, `HikingWorkout`, `MultiSportWorkout`, `FitnessEquipmentWorkout`
 
-**Helper functions:** `create_warmup_step`, `create_interval_step`, `create_recovery_step`, `create_cooldown_step`, `create_repeat_group`
+**Funções auxiliares:** `create_warmup_step`, `create_interval_step`, `create_recovery_step`, `create_cooldown_step`, `create_repeat_group`
 
-### Additional Resources
-- **Simple Example**: [example.py](https://raw.githubusercontent.com/cyberjunky/python-garminconnect/master/example.py) - Getting started guide
-- **Comprehensive Demo**: [demo.py](https://raw.githubusercontent.com/cyberjunky/python-garminconnect/master/demo.py) - All 130+ API methods
-- **API Documentation**: Comprehensive method documentation in source code
-- **Test Cases**: Real-world usage examples in `tests/` directory
+### Dependências Opcionais
 
-## 🙏 Acknowledgments
+| Extra | O que habilita |
+|-------|---------------|
+| `garminconnect[workout]` | Modelos Pydantic de `workout.py` para upload de treinos tipados |
+| `garminconnect[typed]` | Objetos de resposta validados por Pydantic via `g.typed.*` (experimental) |
+| `garminconnect[example]` | `readchar` para os scripts interativos `demo.py` / `example.py` |
 
-Special thanks to all contributors who have helped improve this project:
+### Recursos Adicionais
 
-- **Community Contributors**: Bug reports, feature requests, and code improvements
-- **Issue Reporters**: Helping identify and resolve compatibility issues
-- **Feature Developers**: Adding new API endpoints and functionality
-- **Documentation Authors**: Improving examples and user guides
+- **Exemplo simples**: [example.py](https://raw.githubusercontent.com/cyberjunky/python-garminconnect/master/example.py) — Guia de introdução
+- **Demo completo**: [demo.py](https://raw.githubusercontent.com/cyberjunky/python-garminconnect/master/demo.py) — Todos os 130+ métodos da API
+- **Casos de teste**: Exemplos de uso do mundo real em `tests/`
 
-This project thrives thanks to community involvement and feedback.
+## 🙏 Agradecimentos
 
-## 💖 Support This Project
+Agradecimentos especiais a todos os colaboradores que ajudaram a melhorar este projeto:
 
-If you find this library useful for your projects, please consider supporting its continued development and maintenance:
+- **Contribuidores da comunidade**: Relatórios de bugs, solicitações de funcionalidades e melhorias de código
+- **Relatores de problemas**: Ajudando a identificar e resolver problemas de compatibilidade
+- **Desenvolvedores de funcionalidades**: Adicionando novos endpoints e funcionalidades à API
+- **Autores de documentação**: Melhorando exemplos e guias de uso
 
-### 🌟 Ways to Support
+Este projeto cresce graças ao envolvimento e feedback da comunidade.
 
-- **⭐ Star this repository** - Help others discover the project
-- **💰 Financial Support** - Contribute to development and hosting costs
-- **🐛 Report Issues** - Help improve stability and compatibility
-- **📖 Spread the Word** - Share with other developers
+## 💖 Apoie Este Projeto
 
-### 💳 Financial Support Options
+Se esta biblioteca é útil para seus projetos, considere apoiar seu desenvolvimento e manutenção continuados:
+
+### 🌟 Como Apoiar
+
+- **⭐ Marque este repositório com estrela** — Ajude outros a descobrir o projeto
+- **💰 Apoio financeiro** — Contribua para os custos de desenvolvimento e hospedagem
+- **🐛 Reporte problemas** — Ajude a melhorar a estabilidade e compatibilidade
+- **📖 Divulgue** — Compartilhe com outros desenvolvedores
+
+### 💳 Opções de Apoio Financeiro
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
-[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
+[![Sponsor no GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
 
-**Why Support?**
-- Keeps the project actively maintained
-- Enables faster bug fixes and new features
-- Supports infrastructure costs (testing, AI, CI/CD)
-- Shows appreciation for hundreds of hours of development
+**Por que apoiar?**
+- Mantém o projeto ativamente desenvolvido
+- Permite correções de bugs e novas funcionalidades mais rápidas
+- Apoia custos de infraestrutura (testes, IA, CI/CD)
+- Reconhece centenas de horas de desenvolvimento
 
-Every contribution, no matter the size, makes a difference and is greatly appreciated! 🙏
+Toda contribuição, independentemente do tamanho, faz diferença e é muito apreciada! 🙏
 
 [releases-shield]: https://img.shields.io/github/release/cyberjunky/python-garminconnect.svg?style=for-the-badge
 [releases]: https://github.com/cyberjunky/python-garminconnect/releases

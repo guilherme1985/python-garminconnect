@@ -2,6 +2,8 @@
 your_data/
 pdm.lock
 .claude/
+bug.txt
+roadmap.txt
 
 # Virtual environments
 .venv/
