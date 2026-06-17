@@ -1,14 +1,28 @@
-class GarminConnectConnectionError(Exception):
-    """Raised when communication ended in error."""
+"""Legacy exception module — re-exports from the formal hierarchy.
 
+This module exists for backward compatibility. The canonical hierarchy
+lives in :mod:`garminconnect.models.exceptions`. All names exported here
+remain identical to the original flat structure used in previous releases.
 
-class GarminConnectTooManyRequestsError(Exception):
-    """Raised when rate limit is exceeded."""
+For new code, prefer importing directly from the formal hierarchy:
 
+    from garminconnect.models.exceptions import (
+        GarminAuthError,
+        GarminTransportError,
+        GarminRateLimitError,
+    )
+"""
 
-class GarminConnectAuthenticationError(Exception):
-    """Raised when authentication is failed."""
+from .models.exceptions import (
+    GarminConnectAuthenticationError,
+    GarminConnectConnectionError,
+    GarminConnectInvalidFileFormatError,
+    GarminConnectTooManyRequestsError,
+)
 
-
-class GarminConnectInvalidFileFormatError(Exception):
-    """Raised when an invalid file format is provided."""
+__all__ = [
+    "GarminConnectAuthenticationError",
+    "GarminConnectConnectionError",
+    "GarminConnectInvalidFileFormatError",
+    "GarminConnectTooManyRequestsError",
+]

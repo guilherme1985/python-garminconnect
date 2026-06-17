@@ -7,6 +7,7 @@ or: pip install garminconnect[workout]
 
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:

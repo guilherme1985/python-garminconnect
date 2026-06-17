@@ -211,12 +211,12 @@ def _handle_api_errors(
                             f"Rate limit exceeded: {e}"
                         ) from e
                     if status and 400 <= status < 500:
-                        new_exc = GarminConnectConnectionError(
-                            f"{label} client error ({status}): {e}"
-                        )
                         resp = getattr(e, "response", None)
-                        if resp is not None:
-                            new_exc.response = resp  # type: ignore[attr-defined]
+                        new_exc = GarminConnectConnectionError(
+                            f"{label} client error ({status}): {e}",
+                            status_code=status,
+                            response=resp,
+                        )
                         raise new_exc from e
                     # 5xx or no parseable status — retryable path.
                     if attempt < attempts:
@@ -237,10 +237,12 @@ def _handle_api_errors(
                     logger.exception(
                         "%s failed for path '%s' (status=%s)", label, path, status
                     )
-                    new_exc = GarminConnectConnectionError(f"{label} HTTP error: {e}")
                     resp = getattr(e, "response", None)
-                    if resp is not None:
-                        new_exc.response = resp  # type: ignore[attr-defined]
+                    new_exc = GarminConnectConnectionError(
+                        f"{label} HTTP error: {e}",
+                        status_code=status,
+                        response=resp,
+                    )
                     raise new_exc from e
                 except (requests.ConnectionError, requests.Timeout) as e:
                     if attempt < attempts:
@@ -270,7 +272,11 @@ def _handle_api_errors(
     return decorator
 
 
-class Garmin:
+from .domain.body import BodyMixin  # noqa: E402
+from .domain.health import HealthMixin  # noqa: E402
+
+
+class Garmin(HealthMixin, BodyMixin):
     """Class for fetching data from Garmin Connect."""
 
     def __init__(
@@ -822,57 +828,11 @@ class Garmin:
             )
         return self.display_name
 
-    def get_full_name(self) -> str | None:
-        """Return full name."""
-        return self.full_name
-
-    def get_unit_system(self) -> str | None:
-        """Return unit system."""
-        return self.unit_system
-
-    def get_stats(self, cdate: str) -> dict[str, Any]:
-        """Return user activity summary for 'cdate' format 'YYYY-MM-DD'
-        (compat for garminconnect).
-        """
-        # Validate input
-        cdate = _validate_date_format(cdate, "cdate")
-        return self.get_user_summary(cdate)
-
-    def get_user_summary(self, cdate: str) -> dict[str, Any]:
-        """Return user activity summary for 'cdate' format 'YYYY-MM-DD'."""
-        # Validate input
-        cdate = _validate_date_format(cdate, "cdate")
-
-        url = f"{self.garmin_connect_daily_summary_url}/{self._require_display_name()}"
-        params = {"calendarDate": cdate}
-        logger.debug("Requesting user summary")
-
-        response = self.connectapi(url, params=params)
-
-        if not response:
-            raise GarminConnectConnectionError("No data received from server")
-
-        if response.get("privacyProtected") is True:
-            raise GarminConnectAuthenticationError("Authentication error")
-
-        return response
-
-    def get_steps_data(self, cdate: str) -> list[dict[str, Any]]:
-        """Fetch available steps data 'cDate' format 'YYYY-MM-DD'."""
-        # Validate input
-        cdate = _validate_date_format(cdate, "cdate")
-
-        url = f"{self.garmin_connect_user_summary_chart}/{self._require_display_name()}"
-        params = {"date": cdate}
-        logger.debug("Requesting steps data")
-
-        response = self.connectapi(url, params=params)
-
-        if response is None:
-            logger.warning("No steps data received")
-            return []
-
-        return response
+    # NOTE: get_full_name, get_unit_system, get_stats, get_user_summary,
+    # get_steps_data and get_heart_rates were extracted to
+    # garminconnect.domain.health.HealthMixin (F2-01a). The methods are
+    # inherited from HealthMixin via class definition above. Behavior is
+    # preserved bit-for-bit.
 
     def get_floors(self, cdate: str) -> dict[str, Any]:
         """Fetch available floors data 'cDate' format 'YYYY-MM-DD'."""
@@ -1017,34 +977,7 @@ class Garmin:
 
         return self.connectapi(url)
 
-    def get_heart_rates(self, cdate: str) -> dict[str, Any]:
-        """Fetch available heart rates data 'cDate' format 'YYYY-MM-DD'.
-
-        Args:
-            cdate: Date string in format 'YYYY-MM-DD'
-
-        Returns:
-            Dictionary containing heart rate data for the specified date
-
-        Raises:
-            ValueError: If cdate format is invalid
-            GarminConnectConnectionError: If no data received
-            GarminConnectAuthenticationError: If authentication fails
-
-        """
-        # Validate input
-        cdate = _validate_date_format(cdate, "cdate")
-
-        url = f"{self.garmin_connect_heartrates_daily_url}/{self.display_name}"
-        params = {"date": cdate}
-        logger.debug("Requesting heart rates")
-
-        response = self.connectapi(url, params=params)
-
-        if response is None:
-            raise GarminConnectConnectionError("No heart rate data received")
-
-        return response
+    # NOTE: get_heart_rates moved to HealthMixin (F2-01a).
 
     def get_stats_and_body(self, cdate: str) -> dict[str, Any]:
         """Return activity data and body composition (compat for garminconnect)."""
@@ -1057,198 +990,9 @@ class Garmin:
             body_avg = {}
         return {**stats, **body_avg}
 
-    def get_body_composition(
-        self, startdate: str, enddate: str | None = None
-    ) -> dict[str, Any]:
-        """Return available body composition data for 'startdate' format
-        'YYYY-MM-DD' through enddate 'YYYY-MM-DD'.
-        """
-        startdate = _validate_date_format(startdate, "startdate")
-        enddate = (
-            startdate if enddate is None else _validate_date_format(enddate, "enddate")
-        )
-        if (
-            datetime.strptime(startdate, DATE_FORMAT_STR).date()
-            > datetime.strptime(enddate, DATE_FORMAT_STR).date()
-        ):
-            raise ValueError("startdate cannot be after enddate")
-        url = f"{self.garmin_connect_weight_url}/weight/dateRange"
-        params = {"startDate": str(startdate), "endDate": str(enddate)}
-        logger.debug("Requesting body composition")
-
-        return self.connectapi(url, params=params)
-
-    def add_body_composition(
-        self,
-        timestamp: str | None,
-        weight: float,
-        percent_fat: float | None = None,
-        percent_hydration: float | None = None,
-        visceral_fat_mass: float | None = None,
-        bone_mass: float | None = None,
-        muscle_mass: float | None = None,
-        basal_met: float | None = None,
-        active_met: float | None = None,
-        physique_rating: float | None = None,
-        metabolic_age: float | None = None,
-        visceral_fat_rating: float | None = None,
-        bmi: float | None = None,
-    ) -> dict[str, Any]:
-        weight = _validate_positive_number(weight, "weight")
-        dt = datetime.fromisoformat(timestamp) if timestamp else datetime.now()
-        fitEncoder = FitEncoderWeight()
-        fitEncoder.write_file_info()
-        fitEncoder.write_file_creator()
-        fitEncoder.write_device_info(dt)
-        fitEncoder.write_weight_scale(
-            dt,
-            weight=weight,
-            percent_fat=percent_fat,
-            percent_hydration=percent_hydration,
-            visceral_fat_mass=visceral_fat_mass,
-            bone_mass=bone_mass,
-            muscle_mass=muscle_mass,
-            basal_met=basal_met,
-            active_met=active_met,
-            physique_rating=physique_rating,
-            metabolic_age=metabolic_age,
-            visceral_fat_rating=visceral_fat_rating,
-            bmi=bmi,
-        )
-        fitEncoder.finish()
-
-        url = self.garmin_connect_upload
-        files = {
-            "file": ("body_composition.fit", fitEncoder.getvalue()),
-        }
-        return self.client.post("connectapi", url, files=files, api=True)
-
-    def add_weigh_in(
-        self, weight: int | float, unitKey: str = "kg", timestamp: str = ""
-    ) -> dict[str, Any] | None:
-        """Add a weigh-in (default to kg)."""
-        # Validate inputs
-        weight = _validate_positive_number(weight, "weight")
-
-        if unitKey not in VALID_WEIGHT_UNITS:
-            raise ValueError(f"unitKey must be one of {VALID_WEIGHT_UNITS}")
-
-        url = f"{self.garmin_connect_weight_url}/user-weight"
-
-        try:
-            dt = datetime.fromisoformat(timestamp) if timestamp else datetime.now()
-        except ValueError as e:
-            raise ValueError(f"invalid timestamp format: {e}") from e
-
-        # Apply timezone offset to get UTC/GMT time
-        dtGMT = dt.astimezone(UTC)
-        payload = {
-            "dateTimestamp": _fmt_ts(dt),
-            "gmtTimestamp": _fmt_ts(dtGMT),
-            "unitKey": unitKey,
-            "sourceType": "MANUAL",
-            "value": weight,
-        }
-        logger.debug("Adding weigh-in")
-        return _validate_json_exists(self.client.post("connectapi", url, json=payload))
-
-    def add_weigh_in_with_timestamps(
-        self,
-        weight: int | float,
-        unitKey: str = "kg",
-        dateTimestamp: str = "",
-        gmtTimestamp: str = "",
-    ) -> dict[str, Any] | None:
-        """Add a weigh-in with explicit timestamps (default to kg)."""
-        url = f"{self.garmin_connect_weight_url}/user-weight"
-
-        if unitKey not in VALID_WEIGHT_UNITS:
-            raise ValueError(f"unitKey must be one of {VALID_WEIGHT_UNITS}")
-        # Make local timestamp timezone-aware
-        dt = (
-            datetime.fromisoformat(dateTimestamp).astimezone()
-            if dateTimestamp
-            else datetime.now().astimezone()
-        )
-        if gmtTimestamp:
-            g = datetime.fromisoformat(gmtTimestamp)
-            # Assume provided GMT is UTC if naive; otherwise convert to UTC
-            if g.tzinfo is None:
-                g = g.replace(tzinfo=UTC)
-            dtGMT = g.astimezone(UTC)
-        else:
-            dtGMT = dt.astimezone(UTC)
-
-        # Validate weight for consistency with add_weigh_in
-        weight = _validate_positive_number(weight, "weight")
-        # Build the payload
-        payload = {
-            "dateTimestamp": _fmt_ts(dt),  # Local time (ms)
-            "gmtTimestamp": _fmt_ts(dtGMT),  # GMT/UTC time (ms)
-            "unitKey": unitKey,
-            "sourceType": "MANUAL",
-            "value": weight,
-        }
-
-        # Debug log for payload
-        logger.debug("Adding weigh-in with explicit timestamps: %s", payload)
-
-        # Make the POST request
-        return _validate_json_exists(self.client.post("connectapi", url, json=payload))
-
-    def get_weigh_ins(self, startdate: str, enddate: str) -> dict[str, Any]:
-        """Get weigh-ins between startdate and enddate using format 'YYYY-MM-DD'."""
-        startdate = _validate_date_format(startdate, "startdate")
-        enddate = _validate_date_format(enddate, "enddate")
-        url = f"{self.garmin_connect_weight_url}/weight/range/{startdate}/{enddate}"
-        params = {"includeAll": True}
-        logger.debug("Requesting weigh-ins")
-
-        return self.connectapi(url, params=params)
-
-    def get_daily_weigh_ins(self, cdate: str) -> dict[str, Any]:
-        """Get weigh-ins for 'cdate' format 'YYYY-MM-DD'."""
-        cdate = _validate_date_format(cdate, "cdate")
-        url = f"{self.garmin_connect_weight_url}/weight/dayview/{cdate}"
-        params = {"includeAll": True}
-        logger.debug("Requesting weigh-ins")
-
-        return self.connectapi(url, params=params)
-
-    def delete_weigh_in(self, weight_pk: str, cdate: str) -> Any:
-        """Delete specific weigh-in."""
-        cdate = _validate_date_format(cdate, "cdate")
-        url = f"{self.garmin_connect_weight_url}/weight/{cdate}/byversion/{weight_pk}"
-        logger.debug("Deleting weigh-in")
-
-        return self.client.request(
-            "DELETE",
-            "connectapi",
-            url,
-            api=True,
-        )
-
-    def delete_weigh_ins(self, cdate: str, delete_all: bool = False) -> int | None:
-        """Delete weigh-in for 'cdate' format 'YYYY-MM-DD'.
-        Includes option to delete all weigh-ins for that date.
-        """
-        daily_weigh_ins = self.get_daily_weigh_ins(cdate)
-        weigh_ins = daily_weigh_ins.get("dateWeightList", [])
-        if not weigh_ins or len(weigh_ins) == 0:
-            logger.warning(f"No weigh-ins found on {cdate}")
-            return None
-        if len(weigh_ins) > 1:
-            logger.warning(f"Multiple weigh-ins found for {cdate}")
-            if not delete_all:
-                logger.warning(
-                    f"Set delete_all to True to delete all {len(weigh_ins)} weigh-ins"
-                )
-                return None
-
-        for w in weigh_ins:
-            self.delete_weigh_in(w["samplePk"], cdate)
-
-        return len(weigh_ins)
+    # NOTE: Body composition / weigh-in / blood pressure methods extracted
+    # to garminconnect.domain.body.BodyMixin (F2-01b).
+    # See Garmin class definition above for the inheritance chain.
 
     def get_body_battery(
         self, startdate: str, enddate: str | None = None
@@ -1278,67 +1022,7 @@ class Garmin:
 
         return self.connectapi(url)
 
-    def set_blood_pressure(
-        self,
-        systolic: int,
-        diastolic: int,
-        pulse: int,
-        timestamp: str = "",
-        notes: str = "",
-    ) -> dict[str, Any]:
-        """Add blood pressure measurement."""
-        url = f"{self.garmin_connect_set_blood_pressure_endpoint}"
-        dt = datetime.fromisoformat(timestamp) if timestamp else datetime.now()
-        # Apply timezone offset to get UTC/GMT time
-        dtGMT = dt.astimezone(UTC)
-        payload = {
-            "measurementTimestampLocal": _fmt_ts(dt),
-            "measurementTimestampGMT": _fmt_ts(dtGMT),
-            "systolic": systolic,
-            "diastolic": diastolic,
-            "pulse": pulse,
-            "sourceType": "MANUAL",
-            "notes": notes,
-        }
-        for name, val, lo, hi in (
-            ("systolic", systolic, 70, 260),
-            ("diastolic", diastolic, 40, 150),
-            ("pulse", pulse, 20, 250),
-        ):
-            if not isinstance(val, int) or not (lo <= val <= hi):
-                raise ValueError(f"{name} must be an int in [{lo}, {hi}]")
-        logger.debug("Adding blood pressure")
-
-        return self.client.post("connectapi", url, json=payload).json()
-
-    def get_blood_pressure(
-        self, startdate: str, enddate: str | None = None
-    ) -> dict[str, Any]:
-        """Returns blood pressure by day for 'startdate' format
-        'YYYY-MM-DD' through enddate 'YYYY-MM-DD'.
-        """
-        startdate = _validate_date_format(startdate, "startdate")
-        if enddate is None:
-            enddate = startdate
-        else:
-            enddate = _validate_date_format(enddate, "enddate")
-        url = f"{self.garmin_connect_blood_pressure_endpoint}/{startdate}/{enddate}"
-        params = {"includeAll": True}
-        logger.debug("Requesting blood pressure data")
-
-        return self.connectapi(url, params=params)
-
-    def delete_blood_pressure(self, version: str, cdate: str) -> dict[str, Any]:
-        """Delete specific blood pressure measurement."""
-        url = f"{self.garmin_connect_set_blood_pressure_endpoint}/{cdate}/{version}"
-        logger.debug("Deleting blood pressure measurement")
-
-        return self.client.request(
-            "DELETE",
-            "connectapi",
-            url,
-            api=True,
-        ).json()
+    # NOTE: Blood pressure methods extracted to BodyMixin (F2-01b).
 
     def get_max_metrics(self, cdate: str) -> dict[str, Any]:
         """Return available max metric data for 'cdate' format 'YYYY-MM-DD'."""

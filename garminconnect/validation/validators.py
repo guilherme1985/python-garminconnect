@@ -3,7 +3,6 @@
 import numbers
 import re
 from datetime import datetime
-from typing import Any
 
 # Constants for validation
 MAX_ACTIVITY_LIMIT = 1000
@@ -25,6 +24,7 @@ def validate_date_format(date_str: str, param_name: str = "date") -> str:
 
     Raises:
         ValueError: If date format is invalid or date is impossible
+
     """
     if not isinstance(date_str, str):
         raise ValueError(f"{param_name} must be a string")
@@ -58,6 +58,7 @@ def validate_positive_number(
 
     Raises:
         ValueError: If value is not positive or not a number
+
     """
     if not isinstance(value, numbers.Real):
         raise ValueError(f"{param_name} must be a number")
@@ -83,6 +84,7 @@ def validate_non_negative_integer(value: int, param_name: str = "value") -> int:
 
     Raises:
         ValueError: If value is not a non-negative integer
+
     """
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{param_name} must be an integer")
@@ -105,6 +107,7 @@ def validate_positive_integer(value: int, param_name: str = "value") -> int:
 
     Raises:
         ValueError: If value is not a positive integer
+
     """
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{param_name} must be an integer")
