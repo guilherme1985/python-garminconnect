@@ -56,7 +56,9 @@ module = [
     "test_retry_decorator",
     "test_workout_constants",
     "test_login_recovery",
+    "test_login_timeout",
     "test_token_permissions",
+    "test_token_store",
     "test_widget_mfa",
     "conftest",
 ]

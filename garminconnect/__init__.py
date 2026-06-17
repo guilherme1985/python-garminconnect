@@ -168,6 +168,45 @@ def _backoff_delay(attempt: int, obj: Any) -> float:
     return base * (0.5 + random.random() * 0.5)  # noqa: S311  jitter, not crypto
 
 
+def _run_with_timeout(func: Callable[[], Any], timeout: float) -> Any:
+    """Execute ``func`` in a daemon thread, raising if it doesn't finish in time.
+
+    Used to bound the login() strategy chain to a maximum wall-clock duration
+    (resolves BUG-004 — login chain could block 2+ minutes with no way for
+    callers to interrupt).
+
+    The thread is daemonized so it doesn't prevent process shutdown, but it
+    cannot be cleanly cancelled — Python doesn't expose thread interruption.
+    Worst case: the runaway login keeps running in the background until the
+    process exits.
+    """
+    import threading
+
+    result: list[Any] = []
+    exception: list[BaseException] = []
+
+    def runner() -> None:
+        try:
+            result.append(func())
+        except BaseException as exc:  # noqa: BLE001
+            exception.append(exc)
+
+    thread = threading.Thread(target=runner, daemon=True, name="garmin-login")
+    thread.start()
+    thread.join(timeout)
+
+    if thread.is_alive():
+        raise GarminConnectConnectionError(
+            f"Login chain exceeded timeout of {timeout}s. "
+            "This usually indicates network issues, Cloudflare bot challenges, "
+            "or rate limiting. Try again later or check your network."
+        )
+
+    if exception:
+        raise exception[0]
+    return result[0] if result else None
+
+
 def _handle_api_errors(
     label: str,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -292,6 +331,7 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
         retry_min_wait: float = 1.0,
         retry_max_wait: float = 10.0,
         verify_login: bool = True,
+        login_timeout: float | None = None,
     ) -> None:
         """Create a new class instance.
 
@@ -307,6 +347,11 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
             it, so a token the API rejects (401/403) is discarded and the next
             strategy is tried. Set ``False`` for the legacy "first token wins"
             behavior.
+        :param login_timeout: Optional global timeout (seconds) for the entire
+            login strategy chain. When set, raises
+            ``GarminConnectConnectionError`` if the chain doesn't finish in
+            time. Defaults to ``None`` (no timeout) for backwards compat.
+            Recommended: 120-180 seconds for interactive use. Resolves BUG-004.
         """
         # Validate input types
         if email is not None and not isinstance(email, str):
@@ -323,6 +368,14 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
             raise ValueError("retry_attempts must be non-negative")
         if not isinstance(verify_login, bool):
             raise ValueError("verify_login must be a boolean")
+        if login_timeout is not None and (
+            not isinstance(login_timeout, (int, float))
+            or isinstance(login_timeout, bool)
+            or login_timeout <= 0
+        ):
+            raise ValueError(
+                "login_timeout must be a positive number or None"
+            )
 
         self.username = email
         self.password = password
@@ -333,6 +386,7 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
         self.retry_min_wait = float(retry_min_wait)
         self.retry_max_wait = float(retry_max_wait)
         self.verify_login = verify_login
+        self.login_timeout = login_timeout
 
         self.garmin_connect_user_settings_url = (
             "/userprofile-service/userprofile/user-settings"
@@ -576,7 +630,22 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
             Tuple[str | None, str | None]: (needs_mfa, None) when MFA is required;
             (None, None) on clean successful login.
 
+        Raises:
+            GarminConnectConnectionError: If ``login_timeout`` was set on the
+                constructor and the strategy chain exceeded it.
+
         """
+        if self.login_timeout is not None:
+            return _run_with_timeout(
+                lambda: self._login_impl(tokenstore),
+                self.login_timeout,
+            )
+        return self._login_impl(tokenstore)
+
+    def _login_impl(
+        self, tokenstore: str | None = None
+    ) -> tuple[str | None, str | None]:
+        """Internal login implementation — see :meth:`login` for public API."""
         tokenstore = tokenstore or os.getenv("GARMINTOKENS")
 
         try:
