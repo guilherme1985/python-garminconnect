@@ -273,10 +273,12 @@ def _handle_api_errors(
 
 
 from .domain.body import BodyMixin  # noqa: E402
+from .domain.goals import GoalsMixin  # noqa: E402
 from .domain.health import HealthMixin  # noqa: E402
+from .domain.nutrition import NutritionMixin  # noqa: E402
 
 
-class Garmin(HealthMixin, BodyMixin):
+class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
     """Class for fetching data from Garmin Connect."""
 
     def __init__(
@@ -1131,91 +1133,7 @@ class Garmin(HealthMixin, BodyMixin):
 
         return {"speed": speed, "heart_rate": heart_rate, "power": power}
 
-    def add_hydration_data(
-        self,
-        value_in_ml: float,
-        timestamp: str | None = None,
-        cdate: str | None = None,
-    ) -> dict[str, Any]:
-        """Add hydration data in ml.  Defaults to current date and current timestamp if left empty
-        :param float required - value_in_ml: The number of ml of water you wish to add (positive) or subtract (negative)
-        :param timestamp optional - timestamp: The timestamp of the hydration update, format 'YYYY-MM-DDThh:mm:ss.ms' Defaults to current timestamp
-        :param date optional - cdate: The date of the weigh in, format 'YYYY-MM-DD'. Defaults to current date.
-        """
-        # Validate inputs
-        if not isinstance(value_in_ml, numbers.Real):
-            raise ValueError("value_in_ml must be a number")
-
-        # Allow negative values for subtraction but validate reasonable range
-        if abs(value_in_ml) > MAX_HYDRATION_ML:
-            raise ValueError(
-                f"value_in_ml seems unreasonably high (>{MAX_HYDRATION_ML}ml)"
-            )
-
-        url = self.garmin_connect_set_hydration_url
-
-        if timestamp is None and cdate is None:
-            # If both are null, use today and now
-            raw_date = date.today()
-            cdate = str(raw_date)
-
-            raw_ts = datetime.now()
-            timestamp = _fmt_ts(raw_ts)
-
-        elif cdate is not None and timestamp is None:
-            # If cdate is provided, validate and use midnight local time
-            cdate = _validate_date_format(cdate, "cdate")
-            raw_ts = datetime.strptime(cdate, DATE_FORMAT_STR)  # midnight local
-            timestamp = _fmt_ts(raw_ts)
-
-        elif cdate is None and timestamp is not None:
-            # If timestamp is provided, normalize and set cdate to its date part
-            if not isinstance(timestamp, str):
-                raise ValueError("timestamp must be a string")
-            try:
-                try:
-                    raw_ts = datetime.fromisoformat(timestamp)
-                except ValueError:
-                    raw_ts = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
-                cdate = raw_ts.date().isoformat()
-                timestamp = _fmt_ts(raw_ts)
-            except ValueError as e:
-                raise ValueError("invalid timestamp format (expected ISO 8601)") from e
-        else:
-            # Both provided - validate consistency and normalize
-            cdate = _validate_date_format(cdate, "cdate")
-            if not isinstance(timestamp, str):
-                raise ValueError("timestamp must be a string")
-            try:
-                try:
-                    raw_ts = datetime.fromisoformat(timestamp)
-                except ValueError:
-                    raw_ts = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
-                ts_date = raw_ts.date().isoformat()
-                if ts_date != cdate:
-                    raise ValueError(
-                        f"timestamp date ({ts_date}) doesn't match cdate ({cdate})"
-                    )
-                timestamp = _fmt_ts(raw_ts)
-            except ValueError:
-                raise
-
-        payload = {
-            "calendarDate": cdate,
-            "timestampLocal": timestamp,
-            "valueInML": value_in_ml,
-        }
-
-        logger.debug("Adding hydration data")
-        return self.client.put("connectapi", url, json=payload).json()
-
-    def get_hydration_data(self, cdate: str) -> dict[str, Any]:
-        """Return available hydration data 'cdate' format 'YYYY-MM-DD'."""
-        cdate = _validate_date_format(cdate, "cdate")
-        url = f"{self.garmin_connect_daily_hydration_url}/{cdate}"
-        logger.debug("Requesting hydration data")
-
-        return self.connectapi(url)
+    # NOTE: Hydration methods extracted to NutritionMixin (F2-01d).
 
     def get_respiration_data(self, cdate: str) -> dict[str, Any]:
         """Return available respiration data 'cdate' format 'YYYY-MM-DD'."""
@@ -1259,111 +1177,7 @@ class Garmin(HealthMixin, BodyMixin):
 
         return self.connectapi(url)
 
-    def get_personal_record(self) -> dict[str, Any]:
-        """Return personal records for current user."""
-        url = f"{self.garmin_connect_personal_record_url}/{self.display_name}"
-        logger.debug("Requesting personal records for user")
-
-        return self.connectapi(url)
-
-    def get_earned_badges(self) -> list[dict[str, Any]]:
-        """Return earned badges for current user."""
-        url = self.garmin_connect_earned_badges_url
-        logger.debug("Requesting earned badges for user")
-
-        return self.connectapi(url)
-
-    def get_available_badges(self) -> list[dict[str, Any]]:
-        """Return available badges for current user."""
-        url = self.garmin_connect_available_badges_url
-        logger.debug("Requesting available badges for user")
-
-        return self.connectapi(url, params={"showExclusiveBadge": "true"})
-
-    def get_in_progress_badges(self) -> list[dict[str, Any]]:
-        """Return in progress badges for current user."""
-        logger.debug("Requesting in progress badges for user")
-
-        earned_badges = self.get_earned_badges()
-        available_badges = self.get_available_badges()
-
-        # Filter out badges that are not in progress
-        def is_badge_in_progress(badge: dict) -> bool:
-            """Return True if the badge is in progress."""
-            progress = badge.get("badgeProgressValue")
-            if not progress:
-                return False
-            if progress == 0:
-                return False
-            target = badge.get("badgeTargetValue")
-            if progress == target:
-                if badge.get("badgeLimitCount") is None:
-                    return False
-                return badge.get("badgeEarnedNumber", 0) < badge["badgeLimitCount"]
-            return True
-
-        earned_in_progress_badges = list(filter(is_badge_in_progress, earned_badges))
-        available_in_progress_badges = list(
-            filter(is_badge_in_progress, available_badges)
-        )
-
-        combined = {b["badgeId"]: b for b in earned_in_progress_badges}
-        combined.update({b["badgeId"]: b for b in available_in_progress_badges})
-        return list(combined.values())
-
-    def get_adhoc_challenges(self, start: int, limit: int) -> dict[str, Any]:
-        """Return adhoc challenges for current user."""
-        start = _validate_non_negative_integer(start, "start")
-        limit = _validate_positive_integer(limit, "limit")
-        url = self.garmin_connect_adhoc_challenges_url
-        params = {"start": str(start), "limit": str(limit)}
-        logger.debug("Requesting adhoc challenges for user")
-
-        return self.connectapi(url, params=params)
-
-    def get_badge_challenges(self, start: int, limit: int) -> dict[str, Any]:
-        """Return badge challenges for current user."""
-        start = _validate_non_negative_integer(start, "start")
-        limit = _validate_positive_integer(limit, "limit")
-        url = self.garmin_connect_badge_challenges_url
-        params = {"start": str(start), "limit": str(limit)}
-        logger.debug("Requesting badge challenges for user")
-
-        return self.connectapi(url, params=params)
-
-    def get_available_badge_challenges(self, start: int, limit: int) -> dict[str, Any]:
-        """Return available badge challenges."""
-        start = _validate_non_negative_integer(start, "start")
-        limit = _validate_positive_integer(limit, "limit")
-        url = self.garmin_connect_available_badge_challenges_url
-        params = {"start": str(start), "limit": str(limit)}
-        logger.debug("Requesting available badge challenges")
-
-        return self.connectapi(url, params=params)
-
-    def get_non_completed_badge_challenges(
-        self, start: int, limit: int
-    ) -> dict[str, Any]:
-        """Return badge non-completed challenges for current user."""
-        start = _validate_non_negative_integer(start, "start")
-        limit = _validate_positive_integer(limit, "limit")
-        url = self.garmin_connect_non_completed_badge_challenges_url
-        params = {"start": str(start), "limit": str(limit)}
-        logger.debug("Requesting badge challenges for user")
-
-        return self.connectapi(url, params=params)
-
-    def get_inprogress_virtual_challenges(
-        self, start: int, limit: int
-    ) -> dict[str, Any]:
-        """Return in-progress virtual challenges for current user."""
-        start = _validate_positive_integer(start, "start")
-        limit = _validate_positive_integer(limit, "limit")
-        url = self.garmin_connect_inprogress_virtual_challenges_url
-        params = {"start": str(start), "limit": str(limit)}
-        logger.debug("Requesting in-progress virtual challenges for user")
-
-        return self.connectapi(url, params=params)
+    # NOTE: Personal records, badges, challenges extracted to GoalsMixin (F2-01c).
 
     def get_sleep_data(self, cdate: str) -> dict[str, Any]:
         """Return sleep data for current user."""
@@ -2069,46 +1883,7 @@ class Garmin(HealthMixin, BodyMixin):
         logger.debug("Requesting activity types")
         return self.connectapi(url)
 
-    def get_goals(
-        self, status: str = "active", start: int = 0, limit: int = 30
-    ) -> list[dict[str, Any]]:
-        """Fetch all goals based on status
-        :param status: Status of goals (valid options are "active", "future", or "past")
-        :type status: str
-        :param start: Initial goal index
-        :type start: int
-        :param limit: Pagination limit when retrieving goals
-        :type limit: int
-        :return: list of goals in JSON format.
-        """
-        goals = []
-        url = self.garmin_connect_goals_url
-        valid_statuses = {"active", "future", "past"}
-        if status not in valid_statuses:
-            raise ValueError(f"status must be one of {valid_statuses}")
-        start = _validate_non_negative_integer(start, "start")
-        limit = _validate_positive_integer(limit, "limit")
-        params = {
-            "status": status,
-            "start": str(start),
-            "limit": str(limit),
-            "sortOrder": "asc",
-        }
-
-        logger.debug("Requesting %s goals", status)
-        while True:
-            params["start"] = str(start)
-            logger.debug(
-                "Requesting %s goals %d to %d", status, start, start + limit - 1
-            )
-            goals_json = self.connectapi(url, params=params)
-            if goals_json:
-                goals.extend(goals_json)
-                start = start + limit
-            else:
-                break
-
-        return goals
+    # NOTE: get_goals extracted to GoalsMixin (F2-01c).
 
     def get_gear(self, userProfileNumber: str) -> dict[str, Any]:
         """Return all user gear."""
@@ -2672,33 +2447,7 @@ class Garmin(HealthMixin, BodyMixin):
         logger.debug("Unscheduling workout %s", scheduled_workout_id)
         return self.client.delete("connectapi", url, api=True)
 
-    def get_menstrual_data_for_date(self, fordate: str) -> dict[str, Any]:
-        """Return menstrual data for date."""
-        fordate = _validate_date_format(fordate, "fordate")
-        url = f"{self.garmin_connect_menstrual_dayview_url}/{fordate}"
-        logger.debug("Requesting menstrual data for date %s", fordate)
-
-        return self.connectapi(url)
-
-    def get_menstrual_calendar_data(
-        self, startdate: str, enddate: str
-    ) -> dict[str, Any]:
-        """Return summaries of cycles that have days between startdate and enddate."""
-        startdate = _validate_date_format(startdate, "startdate")
-        enddate = _validate_date_format(enddate, "enddate")
-        url = f"{self.garmin_connect_menstrual_calendar_url}/{startdate}/{enddate}"
-        logger.debug(
-            "Requesting menstrual data for dates %s through %s", startdate, enddate
-        )
-
-        return self.connectapi(url)
-
-    def get_pregnancy_summary(self) -> dict[str, Any]:
-        """Return snapshot of pregnancy data."""
-        url = f"{self.garmin_connect_pregnancy_snapshot_url}"
-        logger.debug("Requesting pregnancy snapshot data")
-
-        return self.connectapi(url)
+    # NOTE: Menstrual/pregnancy methods extracted to NutritionMixin (F2-01d).
 
     def query_garmin_graphql(self, query: dict[str, Any]) -> dict[str, Any]:
         """Execute a POST to Garmin's GraphQL endpoint.
@@ -2771,26 +2520,7 @@ class Garmin(HealthMixin, BodyMixin):
         logger.debug("Requesting adaptive training plan details for %s", plan_id)
         return self.connectapi(url)
 
-    def get_nutrition_daily_food_log(self, cdate: str) -> dict[str, Any]:
-        """Return food log summary for 'cdate' format 'YYYY-MM-DD'."""
-        cdate = _validate_date_format(cdate, "cdate")
-        url = f"{self.garmin_connect_nutrition_daily_food_logs}/{cdate}"
-        logger.debug("Requesting nutrition food log data for date %s", cdate)
-        return self.connectapi(url)
-
-    def get_nutrition_daily_meals(self, cdate: str) -> dict[str, Any]:
-        """Return meals summary for 'cdate' format 'YYYY-MM-DD'."""
-        cdate = _validate_date_format(cdate, "cdate")
-        url = f"{self.garmin_connect_nutrition_daily_meals}/{cdate}"
-        logger.debug("Requesting nutrition meals data for date %s", cdate)
-        return self.connectapi(url)
-
-    def get_nutrition_daily_settings(self, cdate: str) -> dict[str, Any]:
-        """Return nutrition settings for 'cdate' format 'YYYY-MM-DD'."""
-        cdate = _validate_date_format(cdate, "cdate")
-        url = f"{self.garmin_connect_nutrition_daily_settings}/{cdate}"
-        logger.debug("Requesting nutrition settings data for date %s", cdate)
-        return self.connectapi(url)
+    # NOTE: Nutrition methods extracted to NutritionMixin (F2-01d).
 
     def get_golf_summary(
         self, start: int = 0, limit: int = 100
