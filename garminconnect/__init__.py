@@ -249,6 +249,21 @@ def _handle_api_errors(
                         raise GarminConnectTooManyRequestsError(
                             f"Rate limit exceeded: {e}"
                         ) from e
+                    if status == 400:
+                        resp = getattr(e, "response", None)
+                        body = ""
+                        try:
+                            body = resp.text if resp is not None else ""
+                        except Exception:
+                            body = ""
+                        raise GarminValidationError(
+                            f"{label} validation error (400): {body or e}",
+                            suggestion=(
+                                "Check parameter values — the API rejected the "
+                                "request as malformed (e.g. start must be >= 1 "
+                                "for paginated endpoints)."
+                            ),
+                        ) from e
                     if status and 400 <= status < 500:
                         resp = getattr(e, "response", None)
                         new_exc = GarminConnectConnectionError(
@@ -1381,12 +1396,15 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
         """Return running tolerance data for date range.
 
         Args:
-            startdate: Start date in 'YYYY-MM-DD' format.
-            enddate: End date in 'YYYY-MM-DD' format.
+            startdate: Start date in 'YYYY-MM-DD' format (required).
+            enddate: End date in 'YYYY-MM-DD' format (required).
             aggregation: 'daily' or 'weekly' (default: 'weekly').
 
         Returns:
             List of running tolerance data points.
+
+        Example:
+            >>> api.get_running_tolerance("2026-06-11", "2026-06-18")
 
         """
         startdate = _validate_date_format(startdate, "startdate")
@@ -2568,7 +2586,11 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
                 path.unlink()
 
     def get_training_plans(self) -> dict[str, Any]:
-        """Return all available training plans."""
+        """Return all available training plans.
+
+        Note: this endpoint does not accept start/limit pagination — it
+        returns the full catalogue in a single call.
+        """
         url = f"{self.garmin_connect_training_plan_url}/plans"
         logger.debug("Requesting training plans.")
         return self.connectapi(url)
@@ -2662,3 +2684,4 @@ from .exceptions import (  # noqa: E402
     GarminConnectInvalidFileFormatError,
     GarminConnectTooManyRequestsError,
 )
+from .models.exceptions import GarminValidationError  # noqa: E402

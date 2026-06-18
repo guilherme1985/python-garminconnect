@@ -38,6 +38,25 @@ from garminconnect import (
     GarminConnectTooManyRequestsError,
 )
 
+
+def _load_dotenv() -> None:
+    """Load .env file from script directory into os.environ (no overrides)."""
+    env_path = Path(__file__).resolve().parent / ".env"
+    if not env_path.is_file():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv()
+
 # Debug mode: enable with --debug / -d CLI flag or DEMO_DEBUG=1 env var.
 # When active, shows timestamped DEBUG logs from garminconnect and the
 # underlying HTTP stack (urllib3 / requests) so you can see where delays come

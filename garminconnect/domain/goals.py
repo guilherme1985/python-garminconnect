@@ -103,8 +103,13 @@ class GoalsMixin:
         return self.connectapi(url, params=params)
 
     def get_badge_challenges(self, start: int, limit: int) -> dict[str, Any]:
-        """Return badge challenges for current user."""
-        start = validate_non_negative_integer(start, "start")
+        """Return badge challenges for current user.
+
+        Args:
+            start: 1-based pagination index (must be >= 1; the API rejects 0).
+            limit: page size (must be >= 1).
+        """
+        start = validate_positive_integer(start, "start")
         limit = validate_positive_integer(limit, "limit")
         url = self.garmin_connect_badge_challenges_url
         params = {"start": str(start), "limit": str(limit)}
@@ -114,7 +119,7 @@ class GoalsMixin:
 
     def get_available_badge_challenges(self, start: int, limit: int) -> dict[str, Any]:
         """Return available badge challenges."""
-        start = validate_non_negative_integer(start, "start")
+        start = validate_positive_integer(start, "start")
         limit = validate_positive_integer(limit, "limit")
         url = self.garmin_connect_available_badge_challenges_url
         params = {"start": str(start), "limit": str(limit)}
@@ -126,7 +131,7 @@ class GoalsMixin:
         self, start: int, limit: int
     ) -> dict[str, Any]:
         """Return badge non-completed challenges for current user."""
-        start = validate_non_negative_integer(start, "start")
+        start = validate_positive_integer(start, "start")
         limit = validate_positive_integer(limit, "limit")
         url = self.garmin_connect_non_completed_badge_challenges_url
         params = {"start": str(start), "limit": str(limit)}
@@ -138,7 +143,7 @@ class GoalsMixin:
         self, start: int, limit: int
     ) -> dict[str, Any]:
         """Return in-progress virtual challenges for current user."""
-        start = validate_positive_integer(start, "start")
+        start = validate_non_negative_integer(start, "start")
         limit = validate_positive_integer(limit, "limit")
         url = self.garmin_connect_inprogress_virtual_challenges_url
         params = {"start": str(start), "limit": str(limit)}
