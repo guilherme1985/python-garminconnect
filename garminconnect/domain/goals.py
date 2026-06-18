@@ -156,13 +156,14 @@ class GoalsMixin:
     # ------------------------------------------------------------------ #
 
     def get_goals(
-        self, status: str = "active", start: int = 0, limit: int = 30
+        self, status: str = "active", start: int = 1, limit: int = 30
     ) -> list[dict[str, Any]]:
         """Fetch all goals based on status.
 
         :param status: Status of goals (valid options are "active", "future", or "past")
         :type status: str
-        :param start: Initial goal index
+        :param start: Initial goal index (1-based; the API silently returns an
+            empty list when start=0).
         :type start: int
         :param limit: Pagination limit when retrieving goals
         :type limit: int
@@ -173,7 +174,7 @@ class GoalsMixin:
         valid_statuses = {"active", "future", "past"}
         if status not in valid_statuses:
             raise ValueError(f"status must be one of {valid_statuses}")
-        start = validate_non_negative_integer(start, "start")
+        start = validate_positive_integer(start, "start")
         limit = validate_positive_integer(limit, "limit")
         params = {
             "status": status,

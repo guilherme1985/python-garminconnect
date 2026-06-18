@@ -121,7 +121,11 @@ class NutritionMixin:
     # ------------------------------------------------------------------ #
 
     def get_menstrual_data_for_date(self, fordate: str) -> dict[str, Any]:
-        """Return menstrual data for date."""
+        """Return menstrual data for date.
+
+        Requires Cycle Tracking enabled in the Garmin profile. Returns an
+        empty dict for accounts without tracking active.
+        """
         fordate = validate_date_format(fordate, "fordate")
         url = f"{self.garmin_connect_menstrual_dayview_url}/{fordate}"
         logger.debug("Requesting menstrual data for date %s", fordate)
@@ -146,7 +150,11 @@ class NutritionMixin:
     # ------------------------------------------------------------------ #
 
     def get_pregnancy_summary(self) -> dict[str, Any]:
-        """Return snapshot of pregnancy data."""
+        """Return snapshot of pregnancy data.
+
+        Requires Pregnancy Tracking enabled in the Garmin profile. Returns
+        an empty dict for accounts without active pregnancy tracking.
+        """
         url = f"{self.garmin_connect_pregnancy_snapshot_url}"
         logger.debug("Requesting pregnancy snapshot data")
 
@@ -171,7 +179,11 @@ class NutritionMixin:
         return self.connectapi(url)
 
     def get_nutrition_daily_settings(self, cdate: str) -> dict[str, Any]:
-        """Return nutrition settings for 'cdate' format 'YYYY-MM-DD'."""
+        """Return nutrition settings for 'cdate' format 'YYYY-MM-DD'.
+
+        Returns an empty dict when nutrition tracking has never been
+        configured for this account.
+        """
         cdate = validate_date_format(cdate, "cdate")
         url = f"{self.garmin_connect_nutrition_daily_settings}/{cdate}"
         logger.debug("Requesting nutrition settings data for date %s", cdate)

@@ -1111,7 +1111,12 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
     # NOTE: Blood pressure methods extracted to BodyMixin (F2-01b).
 
     def get_max_metrics(self, cdate: str) -> dict[str, Any]:
-        """Return available max metric data for 'cdate' format 'YYYY-MM-DD'."""
+        """Return available max metric data for 'cdate' format 'YYYY-MM-DD'.
+
+        Requires a Garmin device that records max metrics (VO2 Max, fitness
+        age, etc.). Accounts without a compatible device or without enough
+        recorded activities receive an empty list.
+        """
         cdate = _validate_date_format(cdate, "cdate")
         url = f"{self.garmin_connect_metrics_url}/{cdate}/{cdate}"
         logger.debug("Requesting max metrics")
@@ -1254,6 +1259,9 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
     def get_all_day_events(self, cdate: str) -> dict[str, Any]:
         """Return available daily events data 'cdate' format 'YYYY-MM-DD'.
         Includes autodetected activities, even if not recorded on the watch.
+
+        Returns an empty list when no autodetected activity was observed
+        for the date.
         """
         cdate = _validate_date_format(cdate, "cdate")
         url = f"{self.garmin_daily_events_url}?calendarDate={cdate}"
@@ -1401,7 +1409,10 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
             aggregation: 'daily' or 'weekly' (default: 'weekly').
 
         Returns:
-            List of running tolerance data points.
+            List of running tolerance data points. Empty list when the
+            account/device has not recorded enough qualifying runs to
+            generate a tolerance estimate (typically requires several
+            weeks of structured running with a compatible device).
 
         Example:
             >>> api.get_running_tolerance("2026-06-11", "2026-06-18")
