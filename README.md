@@ -174,6 +174,22 @@ pdm run test
 
 **Nota:** Os testes usam cassetes VCR para gravar/reproduzir respostas da API. Se os testes falharem com erros de autenticação, certifique-se de que tokens válidos existem em `~/.garminconnect` (execute `example.py` primeiro).
 
+### Status de cobertura (smoke test)
+
+Execuções consecutivas de `test_all_apis.py` contra uma conta real (66 endpoints
+read-only por run), agregadas pelo comando `/revisao_teste` (5 runs / 5 min de
+intervalo). Artefatos: `logs/log_teste_<stamp>.{txt,json}`.
+
+| Bateria              | SUCESSO | VAZIO | FALHA | TIMEOUT | VALIDATION |
+|----------------------|--------:|------:|------:|--------:|-----------:|
+| `20260618_023515`    | 52      | 14    | 0     | 0       | 0          |
+| `20260618_103635`    | 57      | 9     | 0     | 0       | 0          |
+| `20260620_002400`    | 58      | 8     | 0     | 0       | 0          |
+
+Os endpoints `VAZIO` restantes dependem de feature/perfil que a conta de teste
+não possui (Cycle Tracking, Pregnancy, VO2 Max, etc.) e estão documentados
+nas próprias docstrings dos métodos. Zero regressões em 3 baterias.
+
 ## 📦 Publicação
 
 Para mantenedores do pacote:
