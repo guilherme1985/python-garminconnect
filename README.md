@@ -91,6 +91,76 @@ python3 ./example.py   # exemplo básico de introdução
 python3 ./demo.py      # demo completo (130+ métodos da API)
 ```
 
+## 💻 CLI
+
+A biblioteca expõe um entry point `garminconnect` com subcomandos para
+consulta direta sem precisar escrever código:
+
+```bash
+garminconnect login                                       # autentica e salva tokens
+garminconnect --cache stats 2026-06-19                    # resumo do dia (com DiskCache)
+garminconnect activities --limit 20                       # últimas 20 atividades
+garminconnect heart-rate --format csv > fc.csv            # FC intra-dia em CSV
+garminconnect sleep                                       # sono de ontem
+garminconnect body-battery --start 2026-06-01 --end 2026-06-19
+garminconnect weight --format csv                         # 90 dias de pesagens
+garminconnect logout                                      # remove tokens
+```
+
+Flags globais: `--tokenstore PATH`, `--format json|csv`, `--cache` (ativa
+`DiskCache` em `<tokenstore>/cache`). Saída por padrão é JSON, pronta
+para pipe com `jq`.
+
+## ⚡ Cache (F5-02)
+
+Reduza chamadas HTTP repetidas plugando um `CacheBackend` no `Garmin`:
+
+```python
+from garminconnect import Garmin
+from garminconnect.cache import DiskCache, InMemoryCache, ttl_for
+
+g = Garmin(email, password, cache=DiskCache("~/.garminconnect/cache"))
+g.login()
+
+# Primeira chamada bate na API e armazena (TTL escolhido por endpoint)
+g.get_user_summary("2026-06-19")
+# Segunda chamada idêntica vem do cache, sem HTTP
+g.get_user_summary("2026-06-19")
+
+g.clear_cache()                # invalida tudo
+print(ttl_for("/activity-service/activity/123"))  # 86400 (24h)
+```
+
+`InMemoryCache` é leve, thread-safe e ideal para CLI/scripts. `DiskCache`
+persiste em SQLite com WAL (sem dependências externas) e sobrevive entre
+execuções. TTLs por endpoint estão em `garminconnect.cache.policies` —
+activities 24h, daily summary 1h, body battery 15min, profile 7d.
+
+## 🐳 Dashboard Docker
+
+Painel web local com gráficos das principais métricas (passos, sono,
+FC, body battery, atividades, peso, HRV, training readiness) +
+opcionalmente Grafana + InfluxDB para histórico longo:
+
+```bash
+cd docker/
+cp .env.example .env       # preencha GARMIN_EMAIL / GARMIN_PASSWORD
+cp -r ~/.garminconnect tokens/   # tokens gerados pelo example.py
+docker compose up -d --build
+```
+
+Acesso:
+
+| Serviço   | URL                   | Detalhes                          |
+|-----------|-----------------------|-----------------------------------|
+| Dashboard | http://localhost:8000 | FastAPI + Chart.js, 10 páginas    |
+| InfluxDB  | http://localhost:8086 | séries temporais (admin/changeme123) |
+| Grafana   | http://localhost:3000 | dashboard "Garmin · Saúde Diária" auto-provisionado (admin/admin) |
+
+Documentação completa em [`docker/README.md`](docker/README.md).
+Coletor assíncrono grava 7 dias de health/sleep/weight no InfluxDB a
+cada 15 min — sem dependências extras (stdlib `urllib`).
+
 ## 🛠️ Desenvolvimento
 
 Este projeto usa [PDM](https://pdm.fming.dev/) para gerenciamento de dependências e automação de tarefas.
