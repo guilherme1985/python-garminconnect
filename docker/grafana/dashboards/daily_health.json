@@ -1,0 +1,101 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Passos diários",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"metrics\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"health\" and r._field == \"steps\")\n  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)\n  |> yield(name: \"steps\")"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "FC repouso (bpm)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"metrics\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"health\" and r._field == \"resting_hr\")\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> yield(name: \"resting_hr\")"
+      }]
+    },
+    {
+      "type": "barchart",
+      "title": "Estágios de sono (h)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 3,
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"metrics\")\n  |> range(start: -14d)\n  |> filter(fn: (r) => r._measurement == \"sleep\")\n  |> filter(fn: (r) => r._field == \"deep_h\" or r._field == \"light_h\" or r._field == \"rem_h\" or r._field == \"awake_h\")\n  |> aggregateWindow(every: 1d, fn: last, createEmpty: false)"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Body Battery (máx)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 4,
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"metrics\")\n  |> range(start: -14d)\n  |> filter(fn: (r) => r._measurement == \"health\" and r._field == \"body_battery\")\n  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "Calorias hoje",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+      "id": 5,
+      "options": {"reduceOptions": {"calcs": ["last"]}},
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"metrics\")\n  |> range(start: -2d)\n  |> filter(fn: (r) => r._measurement == \"health\" and r._field == \"calories\")\n  |> last()"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "Estresse médio",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16},
+      "id": 6,
+      "options": {"reduceOptions": {"calcs": ["last"]}},
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"metrics\")\n  |> range(start: -2d)\n  |> filter(fn: (r) => r._measurement == \"health\" and r._field == \"stress_avg\")\n  |> last()"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Peso (kg)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 16},
+      "id": 7,
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"metrics\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"weight\" and r._field == \"weight_kg\")\n  |> aggregateWindow(every: 1d, fn: last, createEmpty: false)"
+      }]
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": ["garmin"],
+  "templating": {"list": []},
+  "time": {"from": "now-30d", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Garmin · Saúde Diária",
+  "uid": "garmin-daily",
+  "version": 1,
+  "weekStart": ""
+}

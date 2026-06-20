@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
+from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -13,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from garmin_service import days_ago, get_client, safe_call, yesterday
+from scheduler import run_collector
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("dashboard")
@@ -20,7 +24,26 @@ logger = logging.getLogger("dashboard")
 BASE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 
-app = FastAPI(title="Garmin Connect Dashboard")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start background collector if InfluxDB is reachable."""
+    task: asyncio.Task | None = None
+    if os.getenv("INFLUX_URL"):
+        interval = float(os.getenv("COLLECT_INTERVAL_S", "900"))
+        task = asyncio.create_task(run_collector(interval))
+        logger.info("collector started (interval=%.0fs)", interval)
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+
+app = FastAPI(title="Garmin Connect Dashboard", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE / "static")), name="static")
 
 

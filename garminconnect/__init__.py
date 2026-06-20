@@ -347,6 +347,7 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
         retry_max_wait: float = 10.0,
         verify_login: bool = True,
         login_timeout: float | None = None,
+        cache: Any = None,
     ) -> None:
         """Create a new class instance.
 
@@ -402,6 +403,7 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
         self.retry_max_wait = float(retry_max_wait)
         self.verify_login = verify_login
         self.login_timeout = login_timeout
+        self.cache = cache  # F5-02: optional CacheBackend
 
         self.garmin_connect_user_settings_url = (
             "/userprofile-service/userprofile/user-settings"
@@ -625,8 +627,43 @@ class Garmin(HealthMixin, BodyMixin, GoalsMixin, NutritionMixin):
 
     @_handle_api_errors("API call")
     def connectapi(self, path: str, **kwargs: Any) -> Any:
-        """Native connectapi call with error translation and optional retries."""
+        """Native connectapi call with error translation, retries and cache.
+
+        When ``self.cache`` is set, GET-style calls (no body) are served
+        from cache when fresh and stored on miss. TTL is chosen by
+        :func:`garminconnect.cache.ttl_for` based on the URL prefix.
+        """
+        cache = self.cache
+        if cache is not None and not kwargs.get("json") and not kwargs.get("data"):
+            from .cache import ttl_for  # local import keeps cold-path cheap
+            from .cache.backend import MISSING
+            cache_key = self._cache_key(path, kwargs.get("params"))
+            cached = cache.get(cache_key)
+            if cached is not MISSING:
+                logger.debug("cache HIT %s", cache_key)
+                return cached
+            result = self.client.connectapi(path, **kwargs)
+            try:
+                cache.set(cache_key, result, ttl_for(path))
+            except Exception:  # noqa: BLE001 — cache failure never breaks the call
+                logger.exception("cache set failed for %s", cache_key)
+            return result
         return self.client.connectapi(path, **kwargs)
+
+    @staticmethod
+    def _cache_key(path: str, params: Any) -> str:
+        """Stable cache key for (path, params)."""
+        if not params:
+            return path
+        if isinstance(params, dict):
+            items = sorted((str(k), str(v)) for k, v in params.items())
+            return path + "?" + "&".join(f"{k}={v}" for k, v in items)
+        return f"{path}?{params}"
+
+    def clear_cache(self) -> None:
+        """Drop every cached entry (no-op when no cache configured)."""
+        if self.cache is not None:
+            self.cache.clear()
 
     @_handle_api_errors("Web proxy call")
     def connectwebproxy(self, path: str, **kwargs: Any) -> Any:

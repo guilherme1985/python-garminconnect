@@ -31,6 +31,9 @@ requires-python=">=3.12"
 "Issues" = "https://github.com/cyberjunky/python-garminconnect/issues"
 "Changelog" = "https://github.com/cyberjunky/python-garminconnect/releases"
 
+[project.scripts]
+garminconnect = "garminconnect.cli:main"
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"

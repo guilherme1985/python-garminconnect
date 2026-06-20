@@ -6,16 +6,39 @@ métricas do Garmin Connect.
 
 ## Stack
 
-| Componente   | Função                                        |
-|--------------|-----------------------------------------------|
-| FastAPI      | Servidor HTTP + endpoints JSON                |
-| Jinja2       | Templates HTML (server-rendered shell)        |
-| Chart.js     | Gráficos no navegador (carregado via CDN)     |
-| garminconnect| Cliente da API Garmin (versão deste repo)     |
+| Componente   | Função                                                     |
+|--------------|------------------------------------------------------------|
+| FastAPI      | Servidor HTTP + endpoints JSON, scheduler do coletor       |
+| Jinja2       | Templates HTML (server-rendered shell)                     |
+| Chart.js     | Gráficos no navegador (carregado via CDN)                  |
+| garminconnect| Cliente da API Garmin (versão deste repo) + DiskCache F5-02|
+| InfluxDB 2.7 | Séries temporais persistidas pelo coletor (F6-02)          |
+| Grafana 10.4 | Dashboards pré-configurados via provisioning (F6-04)       |
 
-A imagem é multi-stage usando `python:3.12-slim`, instala o
+A imagem da app é multi-stage usando `python:3.12-slim`, instala o
 `garminconnect` direto do código fonte deste repositório (não do PyPI)
 para herdar todas as correções aplicadas no fork.
+
+### Topologia
+
+```
+ ┌──────────┐    ┌──────────────┐    ┌──────────┐
+ │ Garmin   │◄───┤ dashboard    │───►│ InfluxDB │
+ │ Connect  │    │ (FastAPI +   │    │ (séries) │
+ └──────────┘    │  scheduler)  │    └────┬─────┘
+                 └──────┬───────┘         │
+                        │                 ▼
+                        ▼            ┌────────┐
+                 http://:8000        │Grafana │
+                                     │ :3000  │
+                                     └────────┘
+```
+
+O `scheduler.py` roda como tarefa asyncio dentro do dashboard (`lifespan`)
+e a cada `COLLECT_INTERVAL_S` (default 900s = 15min) busca os últimos 7
+dias e grava no InfluxDB via line protocol HTTP — sem dependências
+extras (stdlib `urllib`). DiskCache em `/data/cache` reduz hits na API
+Garmin.
 
 ## Pré-requisitos
 
@@ -45,6 +68,20 @@ docker compose up -d --build
 # 4. Acesse
 open http://localhost:8000
 ```
+
+## Acesso após `docker compose up`
+
+| Serviço    | URL                  | Credenciais             |
+|------------|----------------------|-------------------------|
+| Dashboard  | http://localhost:8000 | (sessão Garmin)         |
+| InfluxDB   | http://localhost:8086 | admin / changeme123 ¹   |
+| Grafana    | http://localhost:3000 | admin / admin ¹         |
+
+¹ valores default do `.env.example` — **troque em produção**.
+
+Em Grafana, o dashboard "Garmin · Saúde Diária" aparece em
+`Dashboards → Garmin` automaticamente (provisioning). Dados começam a
+aparecer após o primeiro tick do coletor (até 15 min).
 
 ## Páginas disponíveis
 

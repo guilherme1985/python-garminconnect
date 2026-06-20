@@ -15,6 +15,7 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
+from garminconnect.cache import DiskCache
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +43,15 @@ def _build_client() -> Garmin:
             "GARMIN_EMAIL/GARMIN_PASSWORD not configured (see .env)."
         )
 
+    cache_dir = os.getenv("GARMIN_CACHE_DIR")
+    cache = DiskCache(cache_dir) if cache_dir else None
+
     garmin = Garmin(
         email=email,
         password=password,
         is_cn=is_cn,
         login_timeout=login_timeout,
+        cache=cache,
         prompt_mfa=lambda: (_ for _ in ()).throw(
             RuntimeError(
                 "MFA required — generate tokens locally first with "
