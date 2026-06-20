@@ -77,13 +77,19 @@ def dashboard(request: Request) -> HTMLResponse:
     cards = []
     summary, err = safe_call("get_user_summary", d)
     if summary:
+        # OMS / Garmin: vigorous intensity counts double.
+        mod = summary.get("moderateIntensityMinutes") or 0
+        vig = summary.get("vigorousIntensityMinutes") or 0
+        goal = summary.get("intensityMinutesGoal") or 0
+        intensity_total = mod + 2 * vig
+        intensity_label = f"{intensity_total} / {goal}" if goal else intensity_total
         cards = [
             ("Passos",      summary.get("totalSteps", 0),                    "👟"),
             ("Calorias",    round(summary.get("totalKilocalories") or 0),    "🔥"),
             ("Distância",   f"{(summary.get('totalDistanceMeters') or 0)/1000:.2f} km", "📏"),
             ("FC repouso",  summary.get("restingHeartRate", "—"),            "❤️"),
             ("Andares",     summary.get("floorsAscended", 0),                "🏢"),
-            ("Min. intens.",summary.get("intensityMinutes", 0),              "⚡"),
+            ("Min. intens.",intensity_label,                                 "⚡"),
             ("Stress méd.", summary.get("averageStressLevel", "—"),          "🧘"),
             ("Body Battery",summary.get("bodyBatteryHighestValue", "—"),     "🔋"),
         ]

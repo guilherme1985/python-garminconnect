@@ -89,7 +89,8 @@ def _collect(days: int = 7) -> list[str]:
             "steps":          summary.get("totalSteps"),
             "calories":       summary.get("totalKilocalories"),
             "resting_hr":     summary.get("restingHeartRate"),
-            "intensity_min":  summary.get("intensityMinutes"),
+            "intensity_min":  ((summary.get("moderateIntensityMinutes") or 0)
+                              + 2 * (summary.get("vigorousIntensityMinutes") or 0)) or None,
             "floors":         summary.get("floorsAscended"),
             "body_battery":   summary.get("bodyBatteryHighestValue"),
             "stress_avg":     summary.get("averageStressLevel"),
