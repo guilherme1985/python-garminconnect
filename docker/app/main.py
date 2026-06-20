@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from garmin_service import days_ago, get_client, safe_call, yesterday
+from garmin_service import days_ago, get_client, safe_call
 from scheduler import STATE, force_sync, run_collector
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -112,8 +112,8 @@ async def api_sync() -> JSONResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request) -> HTMLResponse:
-    """Resumo do dia anterior + métricas-chave."""
-    d = yesterday()
+    """Resumo do dia atual + métricas-chave."""
+    d = date.today().isoformat()
     cards = []
     summary, err = safe_call("get_user_summary", d)
     if summary:
@@ -176,7 +176,7 @@ def activities(request: Request) -> HTMLResponse:
 
 @app.get("/api/steps")
 def api_steps() -> JSONResponse:
-    data, err = safe_call("get_daily_steps", days_ago(30), yesterday())
+    data, err = safe_call("get_daily_steps", days_ago(30), date.today().isoformat())
     if err:
         return JSONResponse({"error": err}, status_code=502)
     labels = [d.get("calendarDate") for d in data or []]
@@ -200,7 +200,7 @@ def api_steps() -> JSONResponse:
 
 @app.get("/api/heart")
 def api_heart() -> JSONResponse:
-    d = yesterday()
+    d = date.today().isoformat()
     data, err = safe_call("get_heart_rates", d)
     if err:
         return JSONResponse({"error": err}, status_code=502)
@@ -229,7 +229,7 @@ def api_heart() -> JSONResponse:
 @app.get("/api/sleep")
 def api_sleep() -> JSONResponse:
     labels, deep, light, rem, awake = [], [], [], [], []
-    for n in range(14, 0, -1):
+    for n in range(14, -1, -1):  # inclui hoje (n=0)
         d = (date.today() - timedelta(days=n)).isoformat()
         v, _ = safe_call("get_sleep_data", d)
         labels.append(d)
@@ -257,7 +257,7 @@ def api_sleep() -> JSONResponse:
 @app.get("/api/stress")
 def api_stress() -> JSONResponse:
     labels, avg, mx = [], [], []
-    for n in range(7, 0, -1):
+    for n in range(7, -1, -1):  # inclui hoje (n=0)
         d = (date.today() - timedelta(days=n)).isoformat()
         v, _ = safe_call("get_stress_data", d)
         labels.append(d)
@@ -277,7 +277,7 @@ def api_stress() -> JSONResponse:
 
 @app.get("/api/battery")
 def api_battery() -> JSONResponse:
-    data, err = safe_call("get_body_battery", days_ago(7), yesterday())
+    data, err = safe_call("get_body_battery", days_ago(7), date.today().isoformat())
     if err:
         return JSONResponse({"error": err}, status_code=502)
     labels = [d.get("date") for d in data or []]
@@ -299,7 +299,7 @@ def api_battery() -> JSONResponse:
 
 @app.get("/api/weight")
 def api_weight() -> JSONResponse:
-    data, err = safe_call("get_weigh_ins", days_ago(90), yesterday())
+    data, err = safe_call("get_weigh_ins", days_ago(90), date.today().isoformat())
     if err:
         return JSONResponse({"error": err}, status_code=502)
     entries = []
@@ -329,7 +329,7 @@ def api_weight() -> JSONResponse:
 
 @app.get("/api/hrv")
 def api_hrv() -> JSONResponse:
-    d = yesterday()
+    d = date.today().isoformat()
     data, err = safe_call("get_hrv_data", d)
     if err:
         return JSONResponse({"error": err}, status_code=502)
@@ -358,7 +358,7 @@ def api_hrv() -> JSONResponse:
 
 @app.get("/api/training")
 def api_training() -> JSONResponse:
-    d = yesterday()
+    d = date.today().isoformat()
     data, err = safe_call("get_training_readiness", d)
     if err:
         return JSONResponse({"error": err}, status_code=502)

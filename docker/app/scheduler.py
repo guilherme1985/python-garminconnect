@@ -93,11 +93,17 @@ def _line(measurement: str, tags: dict[str, str], fields: dict[str, Any],
 
 
 def _collect(days: int = 7) -> list[str]:
-    """Pull last N days of summary + sleep + weight; build line protocol."""
+    """Pull last N days INCLUDING TODAY; build InfluxDB line protocol."""
     g = get_client()
+    # Drop any cached "empty today" so we always re-pull today's partial day.
+    try:
+        g.clear_cache()
+    except Exception:  # noqa: BLE001
+        pass
     points: list[str] = []
     today = date.today()
-    for n in range(days, 0, -1):
+    # range(days, -1, -1) = [days, days-1, ..., 1, 0]  → inclui n=0 (hoje)
+    for n in range(days, -1, -1):
         d = (today - timedelta(days=n)).isoformat()
         ts = int(time.mktime(time.strptime(d, "%Y-%m-%d")))
 

@@ -12,15 +12,15 @@ TTL_POLICIES: list[tuple[str, float]] = [
     # 24h — past activities, immutable
     ("/activity-service/activity",                     86400),
     ("/activitylist-service/activities/search",         3600),
-    # 1h — slowly changing daily aggregates
-    ("/usersummary-service/usersummary",                3600),
-    ("/wellness-service/wellness/dailyHeartRate",       3600),
-    ("/wellness-service/wellness/dailyStress",          3600),
-    ("/sleep-service/sleep",                            3600),
-    ("/wellness-service/wellness/dailySpo2",            3600),
-    ("/wellness-service/wellness/dailyRespiration",     3600),
-    # 15min — body battery (refreshes more often)
-    ("/wellness-service/wellness/bodyBattery",           900),
+    # 5min — daily aggregates that still update during the current day
+    ("/usersummary-service/usersummary",                 300),
+    ("/wellness-service/wellness/dailyHeartRate",        300),
+    ("/wellness-service/wellness/dailyStress",           300),
+    ("/sleep-service/sleep",                             300),
+    ("/wellness-service/wellness/dailySpo2",             300),
+    ("/wellness-service/wellness/dailyRespiration",      300),
+    # 5min — body battery (refreshes very often)
+    ("/wellness-service/wellness/bodyBattery",           300),
     # 24h — long historical ranges (weeks, weight, badges)
     ("/biometric-service/biometric",                   86400),
     ("/weight-service/weight",                         86400),
