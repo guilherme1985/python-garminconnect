@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Resumo · Garmin Dashboard{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h2>Resumo</h2>
+    <p class="subtitle">{{ user }} · {{ report_date }}</p>
+  </div>
+</header>
+
+{% if error %}
+<div class="alert">{{ error }}</div>
+{% endif %}
+
+<section class="cards">
+  {% for label, value, icon in cards %}
+  <div class="card">
+    <div class="card-icon">{{ icon }}</div>
+    <div class="card-body">
+      <div class="card-value">{{ value }}</div>
+      <div class="card-label">{{ label }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="quick">
+  <h3>Atalhos</h3>
+  <div class="quick-grid">
+    {% for key, label, href, icon in pages if key != 'dashboard' %}
+    <a class="quick-card" href="{{ href }}"><span class="icon">{{ icon }}</span>{{ label }}</a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

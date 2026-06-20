@@ -8,6 +8,8 @@ roadmap.txt
 nova_arquitetura.txt
 logs/
 test_all_apis.py
+docker/tokens/
+docker/.env
 
 # Virtual environments
 .venv/

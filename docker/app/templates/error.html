@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-head"><h2>Erro</h2></header>
+<div class="alert">{{ error }}</div>
+<p class="hint">Verifique se o login na Garmin foi feito (gere tokens via <code>example.py</code> e monte o diretório de tokens) e tente novamente.</p>
+{% endblock %}

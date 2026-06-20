@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Garmin Dashboard{% endblock %}
+{% block content %}
+<header class="page-head"><h2>{{ title }}</h2></header>
+<div id="status" class="hint">Carregando…</div>
+<div class="chart-wrap" id="chart-wrap" hidden>
+  <canvas id="chart"></canvas>
+</div>
+<div id="table-wrap" hidden>
+  <h3>Detalhes</h3>
+  <div class="table-scroll"><table id="table"></table></div>
+</div>
+
+<script>
+async function load() {
+  const status = document.getElementById('status');
+  try {
+    const r = await fetch("{{ endpoint }}");
+    const d = await r.json();
+    if (!r.ok || d.error) {
+      status.textContent = "Erro: " + (d.error || r.statusText);
+      status.classList.add('error');
+      return;
+    }
+    if (d.chart) {
+      document.getElementById('chart-wrap').hidden = false;
+      new Chart(document.getElementById('chart'), {
+        type: d.chart.type,
+        data: { labels: d.chart.labels, datasets: d.chart.datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#cbd5e1' } } },
+          scales: d.chart.type === 'doughnut' ? {} : {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' },
+                 stacked: d.chart.datasets.some(ds => ds.stack) },
+          },
+        },
+      });
+    }
+    if (d.table && d.table.length) {
+      document.getElementById('table-wrap').hidden = false;
+      const t = document.getElementById('table');
+      const cols = Object.keys(d.table[0]);
+      t.innerHTML = "<thead><tr>" + cols.map(c => `<th>${c}</th>`).join('') + "</tr></thead>"
+                  + "<tbody>" + d.table.map(row =>
+                       "<tr>" + cols.map(c => `<td>${row[c] ?? ''}</td>`).join('') + "</tr>"
+                    ).join('') + "</tbody>";
+    }
+    if (!d.chart && (!d.table || !d.table.length)) {
+      status.textContent = "Sem dados para o período.";
+    } else {
+      status.hidden = true;
+    }
+  } catch (e) {
+    status.textContent = "Falha: " + e;
+    status.classList.add('error');
+  }
+}
+load();
+</script>
+{% endblock %}

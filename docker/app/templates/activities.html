@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Atividades · Garmin Dashboard{% endblock %}
+{% block content %}
+<header class="page-head"><h2>Atividades recentes</h2></header>
+<div id="status" class="hint">Carregando…</div>
+<div class="grid-2" id="grid" hidden>
+  <div class="chart-wrap small"><canvas id="chart"></canvas></div>
+  <div id="table-wrap">
+    <h3>Lista</h3>
+    <div class="table-scroll"><table id="table"></table></div>
+  </div>
+</div>
+
+<script>
+async function load() {
+  const status = document.getElementById('status');
+  const r = await fetch('/api/activities');
+  const d = await r.json();
+  if (!r.ok || d.error) {
+    status.textContent = "Erro: " + (d.error || r.statusText);
+    status.classList.add('error'); return;
+  }
+  document.getElementById('grid').hidden = false;
+  status.hidden = true;
+  new Chart(document.getElementById('chart'), {
+    type: d.chart.type,
+    data: { labels: d.chart.labels, datasets: d.chart.datasets },
+    options: { plugins: { legend: { labels: { color: '#cbd5e1' } } } },
+  });
+  const cols = d.table.length ? Object.keys(d.table[0]) : [];
+  document.getElementById('table').innerHTML =
+    "<thead><tr>" + cols.map(c => `<th>${c}</th>`).join('') + "</tr></thead>" +
+    "<tbody>" + d.table.map(row =>
+       "<tr>" + cols.map(c => `<td>${row[c] ?? ''}</td>`).join('') + "</tr>"
+    ).join('') + "</tbody>";
+}
+load();
+</script>
+{% endblock %}
