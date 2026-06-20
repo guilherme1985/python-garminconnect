@@ -6,8 +6,7 @@ bug.txt
 bugs.txt
 roadmap.txt
 nova_arquitetura.txt
-log_teste_*.txt
-log_teste_*.json
+logs/
 test_all_apis.py
 
 # Virtual environments
