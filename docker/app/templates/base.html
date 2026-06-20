@@ -17,8 +17,68 @@
     </a>
     {% endfor %}
   </nav>
+  <div class="sync-box">
+    <button id="syncBtn" class="sync-btn" onclick="forceSync()" title="Forçar coleta e gravação no InfluxDB">
+      <span id="syncIcon">⟳</span> Sincronizar
+    </button>
+    <div id="syncStatus" class="sync-status">aguardando…</div>
+  </div>
   <div class="footer">v1.0 · MIT</div>
 </aside>
+<script>
+  function _fmtAgo(iso) {
+    if (!iso) return '—';
+    const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return s + 's atrás';
+    if (s < 3600) return Math.round(s/60) + 'min atrás';
+    return Math.round(s/3600) + 'h atrás';
+  }
+  async function refreshSyncStatus() {
+    try {
+      const r = await fetch('/api/sync/status');
+      const d = await r.json();
+      const el = document.getElementById('syncStatus');
+      const btn = document.getElementById('syncBtn');
+      if (!d.enabled) {
+        el.textContent = 'coletor inativo';
+        el.className = 'sync-status off';
+        btn.disabled = true;
+        return;
+      }
+      if (d.running) {
+        el.textContent = 'sincronizando…';
+        el.className = 'sync-status busy';
+        btn.disabled = true;
+        return;
+      }
+      btn.disabled = false;
+      const icon = d.last_status === 'ok' ? '✓'
+                 : d.last_status === 'error' ? '⚠'
+                 : '·';
+      const ago = _fmtAgo(d.last_run_at);
+      el.textContent = `${icon} ${ago} · ${d.last_points} pts`;
+      el.title = d.last_error || '';
+      el.className = 'sync-status ' + d.last_status;
+    } catch (e) {}
+  }
+  async function forceSync() {
+    const btn = document.getElementById('syncBtn');
+    btn.disabled = true;
+    document.getElementById('syncIcon').classList.add('spin');
+    try {
+      const r = await fetch('/api/sync', {method: 'POST'});
+      const d = await r.json();
+      if (!r.ok) {
+        document.getElementById('syncStatus').textContent = d.error || d.msg || 'erro';
+      }
+    } finally {
+      document.getElementById('syncIcon').classList.remove('spin');
+      await refreshSyncStatus();
+    }
+  }
+  refreshSyncStatus();
+  setInterval(refreshSyncStatus, 15000);
+</script>
 <main class="main">
   {% block content %}{% endblock %}
 </main>

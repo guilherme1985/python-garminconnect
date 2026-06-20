@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from garmin_service import days_ago, get_client, safe_call, yesterday
-from scheduler import run_collector
+from scheduler import STATE, force_sync, run_collector
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("dashboard")
@@ -68,6 +68,46 @@ def _ctx(request: Request, **extra: Any) -> dict[str, Any]:
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/sync/status")
+async def api_sync_status() -> JSONResponse:
+    """Return current collector state (for sidebar polling)."""
+    return JSONResponse({
+        "running":     STATE.lock.locked(),
+        "last_run_at": STATE.last_run_at.isoformat() if STATE.last_run_at else None,
+        "next_run_at": STATE.next_run_at.isoformat() if STATE.next_run_at else None,
+        "last_status": STATE.last_status,
+        "last_points": STATE.last_points,
+        "last_error":  STATE.last_error,
+        "interval_s":  STATE.interval_s,
+        "runs_total":  STATE.runs_total,
+        "runs_ok":     STATE.runs_ok,
+        "enabled":     bool(os.getenv("INFLUX_URL")),
+    })
+
+
+@app.post("/api/sync")
+async def api_sync() -> JSONResponse:
+    """Run a collector iteration on demand."""
+    if not os.getenv("INFLUX_URL"):
+        return JSONResponse(
+            {"status": "disabled",
+             "error": "INFLUX_URL não configurado — coletor inativo"},
+            status_code=400,
+        )
+    if STATE.lock.locked():
+        return JSONResponse(
+            {"status": "busy", "msg": "sync já em andamento"},
+            status_code=409,
+        )
+    await force_sync()
+    return JSONResponse({
+        "status":      STATE.last_status,
+        "last_run_at": STATE.last_run_at.isoformat() if STATE.last_run_at else None,
+        "last_points": STATE.last_points,
+        "last_error":  STATE.last_error,
+    })
 
 
 @app.get("/", response_class=HTMLResponse)

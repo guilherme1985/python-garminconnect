@@ -16,7 +16,8 @@ import asyncio
 import logging
 import os
 import time
-from datetime import date, timedelta
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
 from typing import Any
 from urllib import error as urlerror
 from urllib import request as urlrequest
@@ -24,6 +25,26 @@ from urllib import request as urlrequest
 from garmin_service import get_client
 
 logger = logging.getLogger("scheduler")
+
+
+# ----------------- shared state (observable from /api/sync) ---------- #
+
+
+@dataclass
+class CollectorState:
+    """Single source of truth for the dashboard sync indicator."""
+    last_run_at: datetime | None = None
+    last_status: str = "idle"          # idle | running | ok | error
+    last_points: int = 0
+    last_error: str | None = None
+    next_run_at: datetime | None = None
+    interval_s: float = 900.0
+    runs_total: int = 0
+    runs_ok: int = 0
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
+
+STATE = CollectorState()
 
 
 def _influx_url() -> str:
@@ -137,15 +158,42 @@ def _collect(days: int = 7) -> list[str]:
     return points
 
 
+async def _run_once(days: int = 7) -> None:
+    """Single collect→write iteration that updates STATE."""
+    if STATE.lock.locked():
+        logger.warning("sync requested but one is already running — ignored")
+        return
+    async with STATE.lock:
+        STATE.last_status = "running"
+        STATE.runs_total += 1
+        try:
+            points = await asyncio.to_thread(_collect, days)
+            await asyncio.to_thread(_influx_write, points)
+            STATE.last_points = len(points)
+            STATE.last_status = "ok"
+            STATE.last_error = None
+            STATE.runs_ok += 1
+            logger.info("sync OK — %d points written to influx", len(points))
+        except Exception as exc:  # noqa: BLE001
+            STATE.last_status = "error"
+            STATE.last_error = f"{type(exc).__name__}: {exc}"
+            logger.exception("sync FAILED: %s", exc)
+        finally:
+            STATE.last_run_at = datetime.now()
+
+
+async def force_sync(days: int = 7) -> None:
+    """Trigger a one-off sync out of band (used by /api/sync endpoint)."""
+    await _run_once(days)
+
+
 async def run_collector(interval_s: float = 900.0) -> None:
     """Loop: collect → write → sleep. Cancellable via lifespan shutdown."""
+    STATE.interval_s = interval_s
+    logger.info("collector started (interval=%.0fs)", interval_s)
     while True:
-        try:
-            points = await asyncio.to_thread(_collect, 7)
-            await asyncio.to_thread(_influx_write, points)
-            logger.info("collector wrote %d points to influx", len(points))
-        except Exception as exc:  # noqa: BLE001
-            logger.exception("collector iteration failed: %s", exc)
+        await _run_once()
+        STATE.next_run_at = datetime.now() + timedelta(seconds=interval_s)
         try:
             await asyncio.sleep(interval_s)
         except asyncio.CancelledError:
