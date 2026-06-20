@@ -13,6 +13,14 @@ Biblioteca Python 3 para acesso à API do Garmin Connect, com dois exemplos pron
 - **`example.py`** — Exemplo básico de autenticação, armazenamento de tokens e chamadas à API
 - **`demo.py`** — Demo completo com acesso a **130+ métodos da API** organizados em **13 categorias**
 
+> **Fork estendido (este repositório)** — além da biblioteca original, este
+> fork inclui: CLI (`garminconnect <subcomando>`), camada de cache em
+> memória/disco com TTL por endpoint, hierarquia formal de exceções,
+> separação em domain mixins (Health/Body/Goals/Nutrition), login com
+> timeout global, e um **dashboard web Docker pronto para usar** (FastAPI +
+> Chart.js + InfluxDB + Grafana) com coletor automático a cada 15 min.
+> Veja a [árvore de funcionalidades adicionais](#-fork-estendido-funcionalidades-adicionais) abaixo.
+
 ```bash
 $ ./demo.py
 🏃‍♂️ Full-blown Garmin Connect API Demo - Main Menu
@@ -55,6 +63,58 @@ Faça sua seleção:
 - **Sistema & Exportação**: 4 métodos (relatórios, logout, GraphQL)
 - **Planos de Treino**: 3 métodos (planos, plano por ID, plano adaptativo por ID)
 - **Golfe**: 3 métodos (resumo do placar, detalhe do placar, dados de cada tacada)
+
+## 🆕 Fork estendido: funcionalidades adicionais
+
+Em relação ao upstream `cyberjunky/python-garminconnect`, este fork entrega:
+
+### Biblioteca
+
+| Recurso | Onde | Detalhes |
+|---------|------|----------|
+| Hierarquia formal de exceções | `garminconnect/models/exceptions.py` | `GarminAuthError`, `GarminValidationError`, `GarminRateLimitError`, `GarminTransportError`, `GarminTokenError`, `GarminCacheError` (com aliases retro-compatíveis) |
+| Separação por domínio | `garminconnect/domain/` | `HealthMixin`, `BodyMixin`, `GoalsMixin`, `NutritionMixin` — reduziu `__init__.py` de 3181 → 2595 linhas |
+| Login resiliente | `garminconnect/auth/token.py` | `TokenStore` (chmod 0600, validação JSON), parâmetro `login_timeout` no `Garmin(...)` |
+| Cache plugável (F5-02) | `garminconnect/cache/` | `CacheBackend` (Protocol), `InMemoryCache`, `DiskCache` (SQLite WAL), `TTL_POLICIES` (16 regras por prefixo) |
+| CLI (F5-03) | `garminconnect/cli.py` | Entry point `garminconnect` com 8 subcomandos, saída JSON/CSV |
+| HTTP 400 → ValidationError | `garminconnect/__init__.py` (camada `connectapi`) | Parâmetros inválidos agora levantam `GarminValidationError` com sugestão, não `ConnectionError` |
+| Centralização de URLs | `garminconnect/core/endpoints.py` | ~70 URLs em `Endpoints.*` |
+
+### Bugs corrigidos contra a API real
+
+- `get_goals(start=0)` retornava silenciosamente lista vazia (mesmo bug-class de `get_badge_challenges`)
+- Cálculo de minutos de intensidade no dashboard (`moderate + 2×vigorous` por convenção OMS)
+- Cadeia de auth sem timeout global podia travar indefinidamente
+- 14 endpoints VAZIO-PERSISTENTE documentados (pré-requisito de feature/perfil)
+
+### Stack Docker (`docker/`)
+
+```
+ ┌──────────┐    ┌──────────────────────┐    ┌──────────┐
+ │ Garmin   │◄───┤ dashboard (FastAPI)  │───►│ InfluxDB │
+ │ Connect  │    │  + scheduler 15min   │    │  (séries)│
+ └──────────┘    │  + DiskCache         │    └────┬─────┘
+                 └──────────┬───────────┘         │
+                            │                     ▼
+                            ▼              ┌────────────┐
+                  http://localhost:8000    │  Grafana   │
+                                           │ :3000 c/   │
+                                           │ provision  │
+                                           └────────────┘
+```
+
+- 10 páginas (dashboard, passos, FC, sono, estresse, body battery, atividades, peso, HRV, training readiness) + APIs JSON espelhadas em `/api/<nome>`
+- Botão "Sincronizar" + indicador de status no rodapé da sidebar
+- `POST /api/sync` força coleta imediata; `GET /api/sync/status` expõe `last_run_at`, `runs_total`, `runs_ok`
+- Dashboard Grafana auto-provisionado ("Garmin · Saúde Diária", 7 painéis)
+- Cache em volume persistente, fallback automático para `InMemoryCache` em caso de erro
+
+### Infraestrutura de testes
+
+- `test_all_apis.py` — smoke test integrado, 66 chamadas read-only, log `.txt`+`.json` em `logs/log_teste_YYYYMMDD_HHMMSS.{txt,json}`
+- Comando `/revisao_teste` — 5 execuções com intervalo de 5min + agregação automática em `bugs.txt` / `roadmap.txt`
+- Suíte `test_token_store.py` (17 testes) + `test_login_timeout.py` (10 testes)
+- **Resultado final**: 4 baterias consecutivas, 58 SUCESSO / 8 VAZIO / 0 falhas (20 execuções, 1320 chamadas)
 
 ## 📖 Sobre
 
@@ -255,10 +315,12 @@ intervalo). Artefatos: `logs/log_teste_<stamp>.{txt,json}`.
 | `20260618_023515`    | 52      | 14    | 0     | 0       | 0          |
 | `20260618_103635`    | 57      | 9     | 0     | 0       | 0          |
 | `20260620_002400`    | 58      | 8     | 0     | 0       | 0          |
+| `20260620_175131`    | 58      | 8     | 0     | 0       | 0          |
 
 Os endpoints `VAZIO` restantes dependem de feature/perfil que a conta de teste
 não possui (Cycle Tracking, Pregnancy, VO2 Max, etc.) e estão documentados
-nas próprias docstrings dos métodos. Zero regressões em 3 baterias.
+nas próprias docstrings dos métodos. **Zero regressões em 4 baterias
+consecutivas** (20 execuções no total).
 
 ## 📦 Publicação
 
