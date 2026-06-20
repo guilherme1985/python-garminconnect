@@ -25,7 +25,8 @@ RUN pip install /tmp/garminconnect-src \
 COPY docker/app /app
 
 RUN useradd --create-home --uid 1000 dash \
- && mkdir -p /data/tokens && chown -R dash:dash /data /app
+ && mkdir -p /data/tokens /data/cache \
+ && chown -R dash:dash /data /app
 USER dash
 
 EXPOSE 8000

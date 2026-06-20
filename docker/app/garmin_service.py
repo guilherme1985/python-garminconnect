@@ -15,7 +15,7 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-from garminconnect.cache import DiskCache
+from garminconnect.cache import DiskCache, InMemoryCache
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,14 @@ def _build_client() -> Garmin:
         )
 
     cache_dir = os.getenv("GARMIN_CACHE_DIR")
-    cache = DiskCache(cache_dir) if cache_dir else None
+    cache: Any = None
+    if cache_dir:
+        try:
+            cache = DiskCache(cache_dir)
+        except Exception as exc:  # noqa: BLE001 — DiskCache failure must not crash app
+            logger.warning("DiskCache(%s) failed (%s: %s) — falling back to memory",
+                           cache_dir, type(exc).__name__, exc)
+            cache = InMemoryCache()
 
     garmin = Garmin(
         email=email,
