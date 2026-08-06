@@ -10,6 +10,7 @@ logs/
 test_all_apis.py
 docker/tokens/
 docker/.env
+USAGE_FOR_OTHER_PROJECTS.md
 
 # Virtual environments
 .venv/
